@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>sentis_m100</name>
+  <name>argos3d_p100</name>
   <version>0.0.1</version>
-  <description>The sentis_m100 package</description>
+  <description>The argos3D P100 ROS package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <maintainer email="simonvogl@voxel.at">Simon Vogl</maintainer>

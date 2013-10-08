@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(sentis_m100)
+project(argos3d_p100)
+
+## check required prerequisites
+SET(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/external/cmake_modules")
+find_package(PMD REQUIRED)
+message(STATUS "${PMD_PLUGIN_DIR}/")
+## preprocessor definitions
+add_definitions(-DPMD_PLUGIN_DIR="${PMD_PLUGIN_DIR}/")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -12,12 +19,14 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
-  tf
+  tf  
 )
+
+# PMD SDK Library
+add_library (pmd_sdk src/sdk/pmdsdk2.cpp)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -29,24 +38,27 @@ find_package(catkin REQUIRED COMPONENTS
 #######################################
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+   FILES
+   Num.msg
+)
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+   FILES
+   AddTwoInts.srv
+)
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   sensor_msgs#   std_msgs
-# )
+generate_messages(
+   DEPENDENCIES
+   sensor_msgs
+   std_msgs
+)
+
+generate_dynamic_reconfigure_options(
+  cfg/argos3d_p100.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -73,6 +85,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${PMD_INCLUDE_DIR}
 )
 
 ## Declare a cpp library
@@ -81,16 +94,20 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-# add_executable(sentis_m100_node src/sentis_m100_node.cpp)
+add_executable(argos3d_p100_node src/argos3d_p100_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(sentis_m100_node sentis_m100_generate_messages_cpp)
 
+# make sure configure headers are built before any node using them
+add_dependencies(argos3d_p100_node ${PROJECT_NAME}_gencfg) 
+
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(sentis_m100_node
 #   ${catkin_LIBRARIES}
 # )
+target_link_libraries(argos3d_p100_node pmd_sdk pmdaccess2 ${catkin_LIBRARIES})
 
 #############
 ## Install ##
