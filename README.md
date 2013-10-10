@@ -1,4 +1,4 @@
-sentis_m100_ros_pkg
+argos_p100_ros_pkg
 ===================
 
-ROS package for Bluetechnix Sentis M100 ToF camera.
+ROS package for Bluetechnix Argos P100 ToF camera.
