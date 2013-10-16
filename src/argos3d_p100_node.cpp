@@ -203,7 +203,11 @@ void publishCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr , ros::Publishe
 	msg->width = cloud_ptr->points.size();
 	for  (unsigned int i =0; i< cloud_ptr->points.size() ; i++)
 		msg->points.push_back ( pcl::PointXYZI(cloud_ptr->points[i]) );
+#if ROS_VERSION > ROS_VERSION_COMBINED(1,9,49)
 	msg->header.stamp = ros::Time::now().toNSec();
+#else
+	msg->header.stamp = ros::Time::now();
+#endif
 	pub.publish (msg);
 }
 
@@ -359,8 +363,12 @@ int publishData(){
 		 msg_non_filtered->points.push_back(temp_point);
 		 //msg_non_filtered->points.push_back ( pcl::PointXYZI(cartesianDist[(i*3) + 0],cartesianDist[(i*3) + 1],cartesianDist[(i*3) + 2], amplitudes[i]) );
 	 }
-	 msg_non_filtered->header.stamp = ros::Time::now().toNSec();
-	 pub_non_filtered.publish (msg_non_filtered);
+#if ROS_VERSION > ROS_VERSION_COMBINED(1,9,49)
+	msg_non_filtered->header.stamp = ros::Time::now().toNSec();
+#else
+	msg_non_filtered->header.stamp = ros::Time::now();
+#endif
+	pub_non_filtered.publish (msg_non_filtered);
 
 	return 1;
 }
@@ -369,13 +377,19 @@ int publishData(){
 
 int main(int argc, char *argv[]) {
 
+	printf("Startup. ros init\n");
 	ros::init (argc, argv, "argos3d_p100");
+	printf("Startup. ros init 2\n");
 	ros::NodeHandle nh;
 
+	printf("Startup. bind server\n");
 	dynamic_reconfigure::Server<argos3d_p100::argos3d_p100Config> srv;
 	dynamic_reconfigure::Server<argos3d_p100::argos3d_p100Config>::CallbackType f;
+	printf("Startup. bind server 1\n");
 	f = boost::bind(&callback, _1, _2);
+	printf("Startup. bind server 2\n");
 	srv.setCallback(f);
+	printf("Startup. bind server 3\n");
 
 	if(initialize(argc, argv,nh)){
 		printf("Initalized Camera...Now Reading Data :) :) \n");
