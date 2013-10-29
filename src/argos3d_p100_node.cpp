@@ -45,6 +45,7 @@
 #define PROC_PARAM ""
 #include <pmdsdk2.h>
 
+#include <ros/console.h>
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <ros/publisher.h>
@@ -142,7 +143,7 @@ void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 		if (res != PMD_OK)
 		{
 			pmdGetLastError (hnd, err, 128);
-			fprintf (stderr, "Could not set integration time: %s\n", err);
+			ROS_WARN_STREAM("Could not set integration time: " << err);
 		}
 	}
 
@@ -151,7 +152,7 @@ void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 		res = pmdSetModulationFrequency(hnd, 0, modulationFrequency);
 		if (res != PMD_OK) {
 			pmdGetLastError (hnd, err, 128);
-			fprintf (stderr, "Could not set modulation frequency: %s\n", err);
+			ROS_WARN_STREAM("Could not set modulation frequency: " << err);
 		}
 	}
 
@@ -164,7 +165,7 @@ void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 			res = pmdProcessingCommand(hnd, err, sizeof(err), "SetBilateralFilter off");
 		if (res != PMD_OK) {
 			pmdGetLastError (hnd, err, 128);
-			fprintf (stderr, "Could not set bilateral filter: %s\n", err);
+			ROS_WARN_STREAM("Could not set bilateral filter: " << err);
 		}
 	}
 
@@ -206,7 +207,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 		if( std::string(argv[i]) == "-it" ) {
 			if( sscanf(argv[++i], "%d", &integrationTime) != 1 
 				|| integrationTime < 100 || integrationTime > 2700 ) {
-				std::cout << "*invalid integration time" << std::endl;
+				ROS_WARN("*invalid integration time");
 				return help();
 			}
 		}
@@ -214,7 +215,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 		else if( std::string(argv[i]) == "-mf" ) {
 			if( sscanf(argv[++i], "%d", &modulationFrequency) != 1 
 				|| modulationFrequency < 5000000 || integrationTime > 30000000 ) {
-				std::cout << "*invalid modulation frequency" << std::endl;
+				ROS_WARN("*invalid modulation frequency");
 				return help();
 			}
 		}
@@ -255,17 +256,17 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 		else if( std::string(argv[i]) == "-at" ) {
 			if( sscanf(argv[++i], "%f", &AmplitudeThreshold) != 1 
 				|| AmplitudeThreshold < 0 || AmplitudeThreshold > 2500 ) {
-				std::cout << "*invalid amplitude threshold" << std::endl;
+				ROS_WARN("*invalid amplitude threshold");
 				return help();
 			}	
 		}
 		// print help
 		else if( std::string(argv[i]) == "--help" ) {
-			std::cout << "arguments:" << argc << " which: " << argv[i] << std::endl;		
+			ROS_WARN_STREAM("arguments: " << argc << " which: " << argv[i]);		
 			return help();
 		}
 		else if( argv[i][0] == '-' ) {
-			std::cout << "invalid option " << argv[i] << std::endl;
+			ROS_WARN_STREAM("invalid option " << argv[i]);
 			return help();
 		}
 	} 	
@@ -284,7 +285,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	if (res != PMD_OK)
 	{
 		pmdGetLastError (0, err, 128);
-		fprintf (stderr, "Could not connect: \n%s\n", err);
+		ROS_ERROR_STREAM("Could not connect: " << err);
 		return 0;
 	}
 
@@ -292,7 +293,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	if (res != PMD_OK)
 	{
 		pmdGetLastError (hnd, err, 128);
-		fprintf (stderr, "Could not transfer data: %s\n", err);
+		ROS_ERROR_STREAM("Could not transfer data: " << err);
 		pmdClose (hnd);
 		return 0;
 	}
@@ -304,14 +305,14 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	if (res != PMD_OK)
 	{
 		pmdGetLastError (hnd, err, 128);
-		fprintf (stderr, "Could not get data description: %s\n", err);
+		ROS_ERROR_STREAM("Could not get data description: " << err);
 		pmdClose (hnd);
 		return 0;
 	}
 
 	if (dd.subHeaderType != PMD_IMAGE_DATA)
 	{
-		fprintf (stderr, "Source data is not an image!\n");
+		ROS_ERROR_STREAM("Source data is not an image!\n");
 		pmdClose (hnd);
 		return 0;
 	}
@@ -359,7 +360,7 @@ int publishData() {
 	if (res != PMD_OK)
 	{
 		pmdGetLastError (hnd, err, 128);
-		fprintf (stderr, "Could transfer data: %s\n", err);
+		ROS_ERROR_STREAM("Could transfer data: " << err);
 		pmdClose (hnd);
 		return 0;
 	}
@@ -372,7 +373,7 @@ int publishData() {
 	if (res != PMD_OK)
 	{
 		pmdGetLastError (hnd, err, 128);
-		fprintf (stderr, "Could get cartesian coordinates: %s\n", err);
+		ROS_ERROR_STREAM("Could get cartesian coordinates: " << err);
 		pmdClose (hnd);
 		return 0;
 	}
@@ -387,7 +388,7 @@ int publishData() {
 		if (res != PMD_OK)
 		{
 			pmdGetLastError (hnd, err, 128);
-			fprintf (stderr, "Could get amplitude values: %s\n", err);
+			ROS_ERROR_STREAM("Could get amplitude values: " << err);
 			pmdClose (hnd);
 			return 1;
 		}
@@ -497,7 +498,7 @@ int publishData() {
 }
 
 int main(int argc, char *argv[]) {
-	printf("Starting argos3d_p100 ros... \n");
+	ROS_INFO("Starting argos3d_p100 ros...");
 	ros::init (argc, argv, "argos3d_p100");
 	ros::NodeHandle nh;
 
@@ -510,7 +511,7 @@ int main(int argc, char *argv[]) {
 		first = true;
 		srv.setCallback(f);
 		first = false;
-		printf("Initalized Camera... Reading Data \n");
+		ROS_INFO("Initalized Camera... Reading Data");
 		ros::Rate loop_rate(10);
 		while (nh.ok() && dataPublished)
 		{
@@ -519,7 +520,7 @@ int main(int argc, char *argv[]) {
 			loop_rate.sleep ();
 		}
 	} else {
-		printf("Cannot Initialize Camera. Check the parameters and try again!!\n");
+		ROS_WARN("Cannot Initialize Camera. Check the parameters and try again!!");
 		return 0;
 	}
 
