@@ -1,8 +1,13 @@
 /******************************************************************************
+ * Copyright (c) 2013
+ * VoXel Interaction Design
+ *
  * Copyright (c) 2011
  * GPS GmbH
  *
- * Author:
+ * @author Simon Vogl
+ * @author Angel Merino Sastre
+ * 
  * Pinaki Sunil Banerjee
  *
  *
@@ -65,8 +70,9 @@ typedef pcl::PointCloud<pcl::PointXYZI> PointCloud;
  * Camera Configuration Parameters
  */
 int integrationTime;
-
 int modulationFrequency;
+bool bilateralFilter;
+
 bool AtLeastFrequency;
 bool AtMostFrequency;
 
@@ -80,6 +86,7 @@ float AmplitudeThreshold;
 int noOfRows;
 int noOfColumns;
 
+bool first;
 /**
  * Camera Driver Parameters
  */
@@ -96,21 +103,80 @@ ros::Publisher pub_non_filtered;
 ros::Publisher pub_filtered;
 ros::Publisher pub_outliers;
 
+int help() {
+	std::cout << "\n Using help for argos3d_p100_ros_pkg\n"
+		" You can set defauld configuration values for the camera with the following options: \n" << std::endl;
+	std::cout << " Usage:\n rosrun argos3d_p100 argos3d_p100_node "<< std::endl
+		<< "\t-it *Integration_Time* \n\tIntegration time(in msec) for the sensor \n\t(min: 100 | max: 2700 | default: 1500) "<< std::endl
+		<< "\t-mf  *Modulation_Frequency* \n\tSet the modulation frequency(Hz) of the sensor \n\t(min: 5000000 | max: 30000000 | default: 30000000) "<< std::endl
+		<< "\t-bf *Bilateral_Filter* \n\tTurns bilateral filtering on or off \n\t(ON: if set | OFF: otherwise | default: OFF) "<< std::endl
+		/*<< "\t-al *At_Least* \n\tModulation Frequency no less than the entered frequency \n\t(ON: 1 | OFF: 0 | default: OFF) "<< std::endl
+		<< "\t-am *At_Most* \n\tModulation Frequency no more than the entered frequency \n\t(ON: 1 | OFF: 0 | default: OFF) "<< std::endl
+		<< "\t-snf *Statistical_Noise_Filter_On* \n\tWhether to apply statistical noise filter from pcl or not \n\t(ON: 1 | OFF: 0 | default: OFF) "<< std::endl
+		<< "\t-nfn *Noise_Filtering_NoOfNeighbours* \n\tNo. of neighbours to be considered for applying statistical noise reduction \n\t(min: 1 | max: 200 | default: 30) "<< std::endl
+		<< "\t-sdt *Std_Dev_Mul_Threshold* \n\tStandard Deviation Multiplier Threshold for applying statistical noise reduction \n\t(min: 0.0 | max: 10.0 | default: 0.4) "<< std::endl*/
+		<< "\t-af *Amplitude_Filter_On* \n\tWhether to apply amplitude filter or not. Image pixels with amplitude values less than the threshold will be filtered out \n\t(ON: if set | OFF: otherwisecatk | default: OFF) " << std::endl
+		<< "\t-at *Amplitude_Threshold* \n\tWhat should be the amplitude filter threshold. Image pixels with lesser aplitude values will be filtered out. Amplitude Filter Status should be true to use this filter \n\t(min: 0 | max: 2500 | default: 0) "<< std::endl
+		<< "\n Example:" << std::endl
+		<< "rosrun argos3d_p100 argos3d_p100_node -it 1500 -mf 30000000 \n" << std::endl;
+	return 0;
+} //print_help
+
 void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 {
-	integrationTime = config.Integration_Time;
+	// Check the configuretion parameters with those given in the initialization
+	if(first) {
+		config.Integration_Time = integrationTime;
+		config.Modulation_Frequency = modulationFrequency;
+		config.Bilateral_Filter = bilateralFilter;
+		config.Amplitude_Filter_On = AmplitudeFilterOn;
+		config.Amplitude_Threshold = AmplitudeThreshold;
+		integrationTime = modulationFrequency = AmplitudeThreshold = -1;
+		bilateralFilter = !bilateralFilter;
+		AmplitudeFilterOn = !AmplitudeFilterOn;
+	}
 
-	modulationFrequency = config.Modulation_Frequency;
-	AtLeastFrequency = config.At_Least;
+	if(integrationTime != config.Integration_Time) {
+		integrationTime = config.Integration_Time;
+		res = pmdSetIntegrationTime (hnd, 0, integrationTime);
+		if (res != PMD_OK)
+		{
+			pmdGetLastError (hnd, err, 128);
+			fprintf (stderr, "Could not set integration time: %s\n", err);
+		}
+	}
+
+	if(modulationFrequency != config.Modulation_Frequency) {
+		modulationFrequency = config.Modulation_Frequency;
+		res = pmdSetModulationFrequency(hnd, 0, modulationFrequency);
+		if (res != PMD_OK) {
+			pmdGetLastError (hnd, err, 128);
+			fprintf (stderr, "Could not set modulation frequency: %s\n", err);
+		}
+	}
+
+	if(bilateralFilter != config.Bilateral_Filter) {
+		bilateralFilter = config.Bilateral_Filter;
+		err[0] = 0;
+		if(bilateralFilter)
+			res = pmdProcessingCommand(hnd, err, sizeof(err), "SetBilateralFilter on");
+		else
+			res = pmdProcessingCommand(hnd, err, sizeof(err), "SetBilateralFilter off");
+		if (res != PMD_OK) {
+			pmdGetLastError (hnd, err, 128);
+			fprintf (stderr, "Could not set bilateral filter: %s\n", err);
+		}
+	}
+
+	/*AtLeastFrequency = config.At_Least;
 	AtMostFrequency = config.At_Most;
 
 	StatisticalNoiseFilterOn = config.Statistical_Noise_Filter_On;
 	NoiseFilteringNoOfNeighbours = config.Noise_Filtering_NoOfNeighbours;
-	StdDevMulThreshold = (float)config.Std_Dev_Mul_Threshold;
+	StdDevMulThreshold = (float)config.Std_Dev_Mul_Threshold;*/
 
 	AmplitudeFilterOn = config.Amplitude_Filter_On;
 	AmplitudeThreshold = config.Amplitude_Threshold;
-
 }
 
 /**
@@ -120,8 +186,10 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	/*
 	 * Inital Setup for parameters
 	 */
-	integrationTime = 238;
-	modulationFrequency = 20000000;
+	integrationTime = 1500;
+	modulationFrequency = 30000000;
+	bilateralFilter = false;
+	
 	AtLeastFrequency = false;
 	AtMostFrequency = false;
 
@@ -131,8 +199,76 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 
 	AmplitudeFilterOn = false;
 	AmplitudeThreshold = 0;
-
-
+	
+	for( int i = 1; i < argc; i++) {
+		
+		// reading width
+		if( std::string(argv[i]) == "-it" ) {
+			if( sscanf(argv[++i], "%d", &integrationTime) != 1 
+				|| integrationTime < 100 || integrationTime > 2700 ) {
+				std::cout << "*invalid integration time" << std::endl;
+				return help();
+			}
+		}
+		// reading heigth
+		else if( std::string(argv[i]) == "-mf" ) {
+			if( sscanf(argv[++i], "%d", &modulationFrequency) != 1 
+				|| modulationFrequency < 5000000 || integrationTime > 30000000 ) {
+				std::cout << "*invalid modulation frequency" << std::endl;
+				return help();
+			}
+		}
+		else if( std::string(argv[i]) == "-bf" ) {
+			bilateralFilter = true;
+		}
+		// reading images file name
+		/*else if( std::string(argv[i]) == "-al" ) {
+			AtLeastFrequency = true;
+		}
+		// reading calibration paremeter for left camera
+		else if( std::string(argv[i]) == "-am" ) {
+			AtMostFrequency = true;
+		}
+		// reading calibration paremeter for right camera
+		else if( std::string(argv[i]) == "-snf" ) {
+			StatisticalNoiseFilterOn = true;
+		}
+		// corner distance
+		else if( std::string(argv[i]) == "-nfn" ) {
+			if( sscanf(argv[++i], "%d", &NoiseFilteringNoOfNeighbours) != 1 
+				|| NoiseFilteringNoOfNeighbours < 1 || NoiseFilteringNoOfNeighbours > 200 ) {
+				std::cout << "*invalid noise filtering No. of neighbours" << std::endl;
+				return help();
+			}
+		}
+		else if( std::string(argv[i]) == "-sdt" ) {
+		   if( sscanf(argv[++i], "%f", &StdDevMulThreshold) != 1 
+				|| StdDevMulThreshold < 1.0f || StdDevMulThreshold > 10.0f ) {
+				std::cout << "*invalid standard deviation multiplier threshold" << std::endl;
+				return help();
+			}
+		}*/
+		// additional parameters
+		else if( std::string(argv[i]) == "-af" ) {
+			AmplitudeFilterOn = true;
+		}
+		else if( std::string(argv[i]) == "-at" ) {
+			if( sscanf(argv[++i], "%f", &AmplitudeThreshold) != 1 
+				|| AmplitudeThreshold < 0 || AmplitudeThreshold > 2500 ) {
+				std::cout << "*invalid amplitude threshold" << std::endl;
+				return help();
+			}	
+		}
+		// print help
+		else if( std::string(argv[i]) == "--help" ) {
+			std::cout << "arguments:" << argc << " which: " << argv[i] << std::endl;		
+			return help();
+		}
+		else if( argv[i][0] == '-' ) {
+			std::cout << "invalid option " << argv[i] << std::endl;
+			return help();
+		}
+	} 	
 
 	/*
 	 * Camera Initialization
@@ -143,9 +279,8 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	sourcePluginLocation << PMD_PLUGIN_DIR << "digicam";
 	procPluginLocation << PMD_PLUGIN_DIR << "digicamproc";
 
-
+	// If the camera is not connected at all, we will get an segmentation fault.
 	res = pmdOpen (&hnd, sourcePluginLocation.str().c_str(), SOURCE_PARAM, procPluginLocation.str().c_str(), PROC_PARAM);
-
 	if (res != PMD_OK)
 	{
 		pmdGetLastError (0, err, 128);
@@ -157,7 +292,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	if (res != PMD_OK)
 	{
 		pmdGetLastError (hnd, err, 128);
-		fprintf (stderr, "Could transfer data: %s\n", err);
+		fprintf (stderr, "Could not transfer data: %s\n", err);
 		pmdClose (hnd);
 		return 0;
 	}
@@ -169,7 +304,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	if (res != PMD_OK)
 	{
 		pmdGetLastError (hnd, err, 128);
-		fprintf (stderr, "Could get data description: %s\n", err);
+		fprintf (stderr, "Could not get data description: %s\n", err);
 		pmdClose (hnd);
 		return 0;
 	}
@@ -198,7 +333,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
  */
 void publishCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr , ros::Publisher pub){
 	PointCloud::Ptr msg (new PointCloud);
-	msg->header.frame_id = "tf_argos3d_p100";
+	msg->header.frame_id = "tf_argos";
 	msg->height = 1;
 	msg->width = cloud_ptr->points.size();
 	for  (unsigned int i =0; i< cloud_ptr->points.size() ; i++)
@@ -215,19 +350,7 @@ void publishCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr , ros::Publishe
 /**
  * Publish the data based on set up parameters.
  */
-int publishData(){
-
-	/*
-	 * Set the integration time
-	 */
-	res = pmdSetIntegrationTime (hnd, 0, integrationTime);
-	if (res != PMD_OK)
-	{
-		pmdGetLastError (hnd, err, 128);
-		fprintf (stderr, "Could set integration time: %s\n", err);
-		pmdClose (hnd);
-		return 0;
-	}
+int publishData() {
 
 	/*
 	 * Update Camera settings
@@ -351,7 +474,7 @@ int publishData(){
 	 }
 
 	 PointCloud::Ptr msg_non_filtered (new PointCloud);
-	 msg_non_filtered->header.frame_id = "tf_argos3d_p100";
+	 msg_non_filtered->header.frame_id = "tf_argos";
 	 msg_non_filtered->height = 1;
 	 msg_non_filtered->width = noOfRows*noOfColumns;
 	 for  (int i =0; i< noOfRows*noOfColumns ; i++){
@@ -373,26 +496,21 @@ int publishData(){
 	return 1;
 }
 
-
-
 int main(int argc, char *argv[]) {
-
-	printf("Startup. ros init\n");
+	printf("Starting argos3d_p100 ros... \n");
 	ros::init (argc, argv, "argos3d_p100");
-	printf("Startup. ros init 2\n");
 	ros::NodeHandle nh;
 
-	printf("Startup. bind server\n");
 	dynamic_reconfigure::Server<argos3d_p100::argos3d_p100Config> srv;
 	dynamic_reconfigure::Server<argos3d_p100::argos3d_p100Config>::CallbackType f;
-	printf("Startup. bind server 1\n");
+
 	f = boost::bind(&callback, _1, _2);
-	printf("Startup. bind server 2\n");
-	srv.setCallback(f);
-	printf("Startup. bind server 3\n");
 
 	if(initialize(argc, argv,nh)){
-		printf("Initalized Camera...Now Reading Data :) :) \n");
+		first = true;
+		srv.setCallback(f);
+		first = false;
+		printf("Initalized Camera... Reading Data \n");
 		ros::Rate loop_rate(10);
 		while (nh.ok() && dataPublished)
 		{
@@ -401,7 +519,8 @@ int main(int argc, char *argv[]) {
 			loop_rate.sleep ();
 		}
 	} else {
-		printf("Cannot Initialize Camera :( Check the parameters and try again!!\n");
+		printf("Cannot Initialize Camera. Check the parameters and try again!!\n");
+		return 0;
 	}
 
 	pmdClose (hnd);
