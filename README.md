@@ -97,7 +97,7 @@ catkin_make
 
 # 3. Usage #
 
-#### * What our demo video:  ####
+#### * Watch our demo video:  ####
 
 > http://youtu.be/CWwY1LJMYmk
 
