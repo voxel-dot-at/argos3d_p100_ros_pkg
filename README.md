@@ -97,6 +97,11 @@ catkin_make
 
 # 3. Usage #
 
+#### * What our demo video:  ####
+
+> http://youtu.be/CWwY1LJMYmk
+
+
 #### 3.1 Start the ROS core ####
 
 <pre><code>roscore &
