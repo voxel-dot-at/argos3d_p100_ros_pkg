@@ -2,42 +2,41 @@ argos_p100_ros_pkg
 ===================
 ### ROS package for Bluetechnix Argos P100 ToF camera. ###
 
-# Sumary #
+# Summary #
 
-This package explaint how to configurate your system and ROS to use the ToF camera Argos P100.
-The package include an example that allows to visualize images using the rviz viewer include in ROS.
-It demostrates how to use the camera within ROS and the different parameter configurations of the argos
-as well as his possibilities.
+This package explains how to configure your system and ROS to use the Argos P100 ToF camera.
+The package includes an example allowing you to visualize images using the rviz viewer included in ROS.
+It demostrates how to use the camera within ROS and the different parameter configurations of the Argos
+as well as its capabilities.
 
-## First step: Get Ros ##
+## First step: Get ROS ##
 
-The argos_p100_ros_kg works with ROS version groovy and hydro. You can user catkin workspaces or the previous
-rosbuild to configurate, compile and get ready ROS.
+The argos_p100_ros_kg works with ROS versions groovy and hydro. You can use catkin workspaces or the previous
+rosbuild to configure, compile and get ready ROS.
 
 We will point in the above lines how to get ros_hydro and catkin workspace from the tutorials of the ROS web site.
 
-In Ubuntu:
-Follow the ROS installation tutorial: 
+In Ubuntu follow the ROS installation tutorial: 
 >http://wiki.ros.org/hydro/Installation/Ubuntu.
 
-Use catkin workspaces:
+Using catkin workspaces:
 >http://wiki.ros.org/catkin 
 >
 >http://wiki.ros.org/catkin_or_rosbuild
 >
 >http://wiki.ros.org/catkin/Tutorials/create_a_workspace
 
-To configurate a catkin workspace in your ROS instalation, follow this ROS 
->tutorial: http://wiki.ros.org/ROS/Tutorials/InstallingandConfiguringROSEnvironment
+To configure a catkin workspace in your ROS installation, follow this 
+>ROS tutorial: http://wiki.ros.org/ROS/Tutorials/InstallingandConfiguringROSEnvironment
 
 ## Known Problems ##
 
 Be sure your libboost library version is >= 1.49.
-Previous versions as 1.46 generate error while compiling argos3d_p100-ros-pkg.
+Previous versions as 1.46 generate errors while compiling argos3d_p100-ros-pkg.
 
 # 1. Configuration #
 
-### Setup P100 USB rules and native libraries ###
+## Setup P100 USB rules and native libraries ##
 
 We should make something similar to what is done on it. 
 The first point is to add the PMDSDK to our system. (The PMDSDK is copyrighted software and it is distributed with your Argos3D P100)
@@ -46,11 +45,10 @@ The first point is to add the PMDSDK to our system. (The PMDSDK is copyrighted s
 
 First browse to the directory of your operating system inside the software files you get with your camera. Install the driver for using the ToF camera:
 
-In Ubuntu/linux
+In Ubuntu/linux copy the file from the driver folder to **/usr/udev/rules.d/**
 <pre><code>cd driver
 sudo cp 10-pmd-ubuntu.rules /usr/udev/rules.d/
 </code></pre>
-copy the file from the driver folder to **/usr/udev/rules.d/**
 This will set the right permissions to allow not sudo users to use the camera.
 
 #### 1.2 Libraries setup ####
@@ -88,10 +86,13 @@ Make sure you have de following dependencies already installed:
 ####  2.2 Install the package ####
 
 Clone from repository: https://github.com/voxel-dot-at/argos3d_p100_ros_pkg.git
-to your /src folder in your catkin workspace.
-Now compile it with:
+to your src/ folder in your catkin workspace.
+and compile it with:
 <pre><code>cd catkin_ws
 source devel/setup.bash ## initialize search path to include local workspace
+cd src/
+git clone https://github.com/voxel-dot-at/argos3d_p100_ros_pkg.git
+cd ..
 catkin_make
 </code></pre>
 
@@ -109,7 +110,9 @@ catkin_make
 
 #### 3.2 Start capturing ####
 
-<pre><code>rosrun argos3d_p100 argos3d_p100_node 
+<pre><code>cd catkin_ws
+source devel/setup.bash
+rosrun argos3d_p100 argos3d_p100_node 
 </code></pre>
 
 *Use --help parameter to display parameter initialization usage*
@@ -119,19 +122,19 @@ catkin_make
 <pre><code>rosrun rviz rviz 
 </code></pre>
 
-*After the rviz windows comes up, set the following options*
+*After the rviz window comes up, set the following options*
 
-1. In the "Display" on the left, set in the "Global Option" the fixed_frame as **/tf_argos3d**
-2. At the bottom in "Display" click on **add** 
-3. In the "Create visualization" opened, select the "By topic" tab and select the **/depth_non_filtered** topic.
+1. In the "Display" pane on the left, open the first group of settings called "Global Options", set the option "Fixed frame" to **/tf_argos3d**
+2. At the bottom in "Display" click on the button **add** to open a dialog titled "Create visualization"
+3. In the dialog that has opened, choose the tab "By topic" and select the **/depth_non_filtered** topic.
 
-Add a Pointcloud2 topic to visualize the depthclouds. Three different set of points are published with following topic names:
+Add a Pointcloud2 topic to visualize the depth clouds. Two different point sets are published with following topic names:
 > - **/depth_non_filtered :** raw data from the pmd camera
 > - **/depth_filtered : after** applying statistical outlier detection from pcl
 
 #### 3.4 Using filters and parameters configuration ####
 
-To use the filter and change camera parameters, use dynamic_reconfigure from ros. To use it do (after launching argos3d_p100_ros_pkg)
+To apply point filters and change camera parameters, use dynamic_reconfigure from ros. To use, it run the configuration interface (after launching argos3d_p100_ros_pkg)
 
 <pre><code>rosrun rqt_reconfigure rqt_reconfigure 
 </code></pre>
@@ -143,5 +146,5 @@ Following camera parameters and filtering methods can be accessed using the dyna
 * **Integration_Time :** Modifies the integration time of the sensor.
 * **Modulation_Frequency :** Modifies the modulation frequency of the sensor.
 * **Bilateral_Filter :** Turns bilateral filtering on or off.
-* **Amplitude_Filter_On :** Indicates if the amplitude filteration to be used or not
-* **Amplitude_Threshold :** Image pixels with lesser aplitude values will be filtered out. Amplitude_Filter_On status should be true to apply this filter.
+* **Amplitude_Filter_On :** Use  the amplitude filter or not
+* **Amplitude_Threshold :** Image pixels with smaller amplitude values will be filtered out. Amplitude_Filter_On status needs to be true to apply this filter value.
