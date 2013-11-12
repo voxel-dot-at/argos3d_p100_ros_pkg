@@ -106,21 +106,21 @@ ros::Publisher pub_outliers;
 
 int help() {
 	std::cout << "\n Using help for argos3d_p100_ros_pkg\n"
-		" You can set defauld configuration values for the camera with the following options: \n" << std::endl;
+		" You can set default configuration values for the camera with the following options: \n" << std::endl;
 	std::cout << " Usage:\n rosrun argos3d_p100 argos3d_p100_node "<< std::endl
 		<< "\t-it *Integration_Time* \n\tIntegration time(in msec) for the sensor \n\t(min: 100 | max: 2700 | default: 1500) "<< std::endl
 		<< "\t-mf  *Modulation_Frequency* \n\tSet the modulation frequency(Hz) of the sensor \n\t(min: 5000000 | max: 30000000 | default: 30000000) "<< std::endl
-		<< "\t-bf *Bilateral_Filter* \n\tTurns bilateral filtering on or off \n\t(ON: if set | OFF: otherwise | default: OFF) "<< std::endl
+		<< "\t-bf *Bilateral_Filter* \n\tTurns bilateral filtering on or off \n\t(ON: if set | OFF: default) "<< std::endl
 		/*<< "\t-al *At_Least* \n\tModulation Frequency no less than the entered frequency \n\t(ON: 1 | OFF: 0 | default: OFF) "<< std::endl
 		<< "\t-am *At_Most* \n\tModulation Frequency no more than the entered frequency \n\t(ON: 1 | OFF: 0 | default: OFF) "<< std::endl
 		<< "\t-snf *Statistical_Noise_Filter_On* \n\tWhether to apply statistical noise filter from pcl or not \n\t(ON: 1 | OFF: 0 | default: OFF) "<< std::endl
 		<< "\t-nfn *Noise_Filtering_NoOfNeighbours* \n\tNo. of neighbours to be considered for applying statistical noise reduction \n\t(min: 1 | max: 200 | default: 30) "<< std::endl
 		<< "\t-sdt *Std_Dev_Mul_Threshold* \n\tStandard Deviation Multiplier Threshold for applying statistical noise reduction \n\t(min: 0.0 | max: 10.0 | default: 0.4) "<< std::endl*/
-		<< "\t-af *Amplitude_Filter_On* \n\tWhether to apply amplitude filter or not. Image pixels with amplitude values less than the threshold will be filtered out \n\t(ON: if set | OFF: otherwisecatk | default: OFF) " << std::endl
+		<< "\t-af *Amplitude_Filter_On* \n\tWhether to apply amplitude filter or not. Image pixels with amplitude values less than the threshold will be filtered out \n\t(ON: if set | OFF: default) " << std::endl
 		<< "\t-at *Amplitude_Threshold* \n\tWhat should be the amplitude filter threshold. Image pixels with lesser aplitude values will be filtered out. Amplitude Filter Status should be true to use this filter \n\t(min: 0 | max: 2500 | default: 0) "<< std::endl
 		<< "\n Example:" << std::endl
 		<< "rosrun argos3d_p100 argos3d_p100_node -it 1500 -mf 30000000 \n" << std::endl;
-	return 0;
+	exit(0);
 } //print_help
 
 void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
@@ -200,9 +200,8 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 
 	AmplitudeFilterOn = false;
 	AmplitudeThreshold = 0;
-	
+
 	for( int i = 1; i < argc; i++) {
-		
 		// reading width
 		if( std::string(argv[i]) == "-it" ) {
 			if( sscanf(argv[++i], "%d", &integrationTime) != 1 
