@@ -64,10 +64,12 @@ Add PMDSDK to your system (use the right version for your system 32 or 64 bits).
 - You have different ways to add it to the **LD_LIBRARY_PATH**.
 - You can simply copy the libpmdaccess2.so file to **/usr/local/lib** as root (or the defauld search library path of your system)
 - Add a .conf file (like pmd_camera_L64.conf) with the path of your library in **/etc/ld.so.conf.d**. The file must contaning the following lines:
+
 <pre><code>#PMD camera support
 /.../PMDSDK/bin
 /.../PMDSDK/include
 </code></pre>
+
 *replace the dots with the absolute path to the PMDSDK directory*
 
 2. Add includes and dynamic plugin libraries
@@ -76,12 +78,13 @@ Add PMDSDK to your system (use the right version for your system 32 or 64 bits).
 - or set an environment variable called $PMDDIR to the path where there is the PMDSDK.
 
 After adding libraries, update the links and cache of the share libraries with:
+
 <pre><code>ldconfig
 </code></pre>
 
 # 2. Installation #
 
-####  2.1 Install dependencies #### 
+#### 2.1 Install dependencies ####
 
 Make sure you have the following dependencies already installed:
 <pre><code> apt-get install ros-hydro-pcl-ros ros-hydro-pcl-conversions ros-hydro-perception-pcl 
@@ -119,7 +122,35 @@ source devel/setup.bash
 rosrun argos3d_p100 argos3d_p100_node 
 </code></pre>
 
+*You can change the camera parameter through command option when inicializing the node*
+
 *Use --help parameter to display parameter initialization usage*
+
+<pre><code>
+ Using help for argos3d_p100_ros_pkg
+ You can set default configuration values for the camera with the following options: 
+
+ Usage:
+ rosrun argos3d_p100 argos3d_p100_node 
+	-it *Integration_Time* 
+	  Integration time(in msec) for the sensor 
+	  (min: 100 | max: 2700 | default: 1500) 
+	-mf  *Modulation_Frequency* 
+	  Set the modulation frequency(Hz) of the sensor 
+	  (min: 5000000 | max: 30000000 | default: 30000000) 
+	-bf *Bilateral_Filter* 
+	  Turns bilateral filtering on or off 
+	  (ON: if set | OFF: default) 
+	-af *Amplitude_Filter_On* 
+	  Whether to apply amplitude filter or not. Image pixels with amplitude values less than the threshold will be filtered out 
+	  (ON: if set | OFF: odefault) 
+	-at *Amplitude_Threshold* 
+	  What should be the amplitude filter threshold. Image pixels with lesser aplitude values will be filtered out. Amplitude Filter Status should be true to use this filter 
+	  (min: 0 | max: 2500 | default: 0) 
+
+ Example:
+ rosrun argos3d_p100 argos3d_p100_node -it 1500 -mf 30000000 
+</code></pre>
 
 #### 3.3 Visualization in rviz ####
 
