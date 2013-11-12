@@ -122,7 +122,7 @@ source devel/setup.bash
 rosrun argos3d_p100 argos3d_p100_node 
 </code></pre>
 
-*You can change the camera parameter through command option when inicializing the node*
+*You can change the camera parameters through command option when initializing the node*
 
 *Use --help parameter to display parameter initialization usage*
 
