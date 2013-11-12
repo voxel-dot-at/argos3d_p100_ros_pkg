@@ -134,9 +134,10 @@ Two different point sets are published with following topic names:
 > - **/depth_filtered : after** applying statistical outlier detection from pcl
 
 To do this please perform the following steps:
-1 In the "Display" panel on the left, open the first group of settings called "Global Options", set the option "Fixed frame" to **/tf_argos3d**
-2 At the bottom in "Display" click on the button **add** to open a dialog titled "Create visualization"
-3 In the dialog opened after, choose the tab "By topic" and select the **/depth_non_filtered** topic.
+
+1. In the "Display" panel on the left, open the first group of settings called "Global Options", set the option "Fixed frame" to **/tf_argos3d**
+2. At the bottom in "Display" click on the button **add** to open a dialog titled "Create visualization"
+3. In the dialog opened after, choose the tab "By topic" and select the **/depth_non_filtered** topic.
 
 #### 3.4 Using filters and parameters configuration ####
 
