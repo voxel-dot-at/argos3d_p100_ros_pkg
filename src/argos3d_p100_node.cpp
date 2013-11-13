@@ -86,6 +86,12 @@ ros::Publisher pub_non_filtered;
 ros::Publisher pub_filtered;
 ros::Publisher pub_outliers;
 
+/**
+ *
+ * @brief This method prints help in command line if given --help option
+ * or if there is any error in the options 
+ *
+ */
 int help() {
 	std::cout << "\n Using help for argos3d_p100_ros_pkg\n"
 		" You can set default configuration values for the camera with the following options: \n" << std::endl;
@@ -105,6 +111,15 @@ int help() {
 	exit(0);
 } //print_help
 
+/**
+ *
+ * @brief Callback for rqt_reconfigure. It is called any time we change a 
+ * parameter in the visual interface 
+ *
+ * @param [in] argos3d_p100::argos3d_p100Config
+ * @param [in] uint32_t
+ *
+ */
 void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 {
 	// Check the configuretion parameters with those given in the initialization
@@ -163,7 +178,13 @@ void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 }
 
 /**
- * Initialize the camera and initial parameter values. Returns 1 if properly initialized.
+ *
+ * @brief Initialize the camera and initial parameter values. Returns 1 if properly initialized.
+ *
+ * @param [in] int
+ * @param [in] argv
+ * @param [in] ros::NodeHandle
+ *
  */
 int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	/*
@@ -311,7 +332,12 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 }
 
 /**
- * Publishes the point clod passed as a parameter
+ *
+ * @brief Publishes the point clod passed as a parameter
+ *
+ * @param [in] pcl::PointCloud<pcl::PointXYZI>::Ptr
+ * @param [in] ros::NodeHandle
+ *
  */
 void publishCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr , ros::Publisher pub){
 	PointCloud::Ptr msg (new PointCloud);
@@ -330,7 +356,9 @@ void publishCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr , ros::Publishe
 
 
 /**
- * Publish the data based on set up parameters.
+ *
+ * @brief Publish the data based on set up parameters.
+ *
  */
 int publishData() {
 
@@ -478,6 +506,14 @@ int publishData() {
 	return 1;
 }
 
+/**
+ *
+ * @brief Main function
+ *
+ * @param [in] int
+ * @param [in] char *
+ *
+ */
 int main(int argc, char *argv[]) {
 	ROS_INFO("Starting argos3d_p100 ros...");
 	ros::init (argc, argv, "argos3d_p100");
@@ -508,3 +544,4 @@ int main(int argc, char *argv[]) {
 	pmdClose (hnd);
 	return 0;
 }
+
