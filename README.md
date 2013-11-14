@@ -44,7 +44,7 @@ The first step is to add the PMDSDK to our system.
 
 #### 1.1 Usb Device rules ####
 
-After unziping the software distributed with your Argos3d P100 camera, browse to the directory 
+After unziping the software distributed with your Argos3D P100 camera, browse to the directory 
 of your operating system version. 
 
 Install the driver for using the ToF camera:
