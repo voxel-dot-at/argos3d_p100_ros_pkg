@@ -1,6 +1,6 @@
 argos3d_p100_ros_pkg
 ===================
-### ROS package for Bluetechnix Argos3d P100 ToF camera. ###
+### ROS package for Bluetechnix Argos3D P100 ToF camera. ###
 
 # Summary #
 
