@@ -1,17 +1,17 @@
-argos_p100_ros_pkg
+argos3d_p100_ros_pkg
 ===================
-### ROS package for Bluetechnix Argos P100 ToF camera. ###
+### ROS package for Bluetechnix Argos3d P100 ToF camera. ###
 
 # Summary #
 
-This package explains how to configure your system and ROS to use the Argos P100 ToF camera.
+This package explains how to configure your system and ROS to use the Argos3d P100 ToF camera.
 The package includes an example allowing you to visualize images using the rviz viewer included in ROS.
-It demostrates how to use the camera within ROS and the different parameter configurations of the Argos
+It demostrates how to use the camera within ROS and the different parameter configurations of the P100
 as well as its capabilities.
 
 ## First step: Get ROS ##
 
-The argos_p100_ros_kg works with ROS versions groovy and hydro. 
+The argos3d_p100_ros_kg works with ROS versions groovy and hydro. 
 You can use catkin workspaces or the previous rosbuild to configure, compile and get ready ROS.
 
 We will point in the above lines how to get ros_hydro and catkin workspace ready 
@@ -44,7 +44,7 @@ The first step is to add the PMDSDK to our system.
 
 #### 1.1 Usb Device rules ####
 
-After unziping the software distributed with your argos_p100 camera, browse to the directory 
+After unziping the software distributed with your Argos3d P100 camera, browse to the directory 
 of your operating system version. 
 
 Install the driver for using the ToF camera:
