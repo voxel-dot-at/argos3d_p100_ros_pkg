@@ -4,7 +4,7 @@ argos3d_p100_ros_pkg
 
 # Summary #
 
-This package explains how to configure your system and ROS to use the Argos3d P100 ToF camera.
+This package explains how to configure your system and ROS to use the Argos3D P100 ToF camera.
 The package includes an example allowing you to visualize images using the rviz viewer included in ROS.
 It demostrates how to use the camera within ROS and the different parameter configurations of the P100
 as well as its capabilities.
