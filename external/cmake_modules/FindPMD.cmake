@@ -40,8 +40,7 @@ FIND_PATH(PMD_PLUGIN_DIR NAMES digicam.L32pap
 ENDIF (NOT PMD_PLUGIN_FOUND)
 
 include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set OODL_YOUBOT_FOUND to TRUE
-# if all listed variables are TRUE
+
 find_package_handle_standard_args(PMD_INCLUDE DEFAULT_MSG PMD_INCLUDE_DIR)
 
 find_package_handle_standard_args(PMD_PLUGIN DEFAULT_MSG PMD_PLUGIN_DIR)
