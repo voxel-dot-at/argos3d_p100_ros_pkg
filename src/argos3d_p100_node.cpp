@@ -23,6 +23,26 @@
  * THE SOFTWARE.
  *
  ******************************************************************************/
+
+/** @mainpage Argos3D P100 ROS package
+ *
+ * @section intro_sec Introduction
+ *
+ * This software defines a interface for working through the network interface with
+ * the ToF camera Sentis-m100 form Bluetechnix GmbH. It allows to create tcp control 
+ * connections in order to write and read register of the camera which define its 
+ * configuration. Also provides a continuous reader for the image frames through the 
+ * udp data connection.
+ *
+ * @section install_sec Installation
+ *
+ * We encorage you to follow the instruction we prepared in:
+ *
+ * ROS wiki: http://wiki.ros.org/argos3d_p100
+ * Github repository: https://github.com/voxel-dot-at/argos3d_p100_ros_pkg
+ *
+ */
+
 #define SOURCE_PARAM ""
 #define PROC_PARAM ""
 #include <pmdsdk2.h>
