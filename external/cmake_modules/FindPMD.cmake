@@ -4,7 +4,7 @@
 #  PMD_INCLUDE_DIR - if PMD Header Include Directory is found
 #
 # The configuration directory PMD_PLUGIN_DIR will always be
-# set, either to a directory containing the "camcube3.L32.pap" file,
+# set, either to a directory containing the "digicam.L32.pap" file,
 # or if no such file is found, to the local folder ".". In the last
 # case a warning message is  issued.
 #
