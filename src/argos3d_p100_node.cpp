@@ -375,6 +375,10 @@ void publishCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr , ros::Publishe
 }
 
 
+static float * cartesianDist = 0;
+static float * amplitudes = 0;
+
+
 /**
  *
  * @brief Publish the data based on set up parameters.
@@ -397,7 +401,8 @@ int publishData() {
 	/*
 	 * Obtain PointClouds
 	 */
-	float * cartesianDist = new float [noOfRows * noOfColumns * 3];
+	if (!cartesianDist)
+		cartesianDist = new float [noOfRows * noOfColumns * 3];
 	res = pmdGet3DCoordinates (hnd, cartesianDist, noOfColumns * noOfRows * 3 * sizeof (float));
 	if (res != PMD_OK)
 	{
@@ -411,16 +416,17 @@ int publishData() {
 	/*
 	 * Obtain Amplitude Values
 	 */
-	float * amplitudes = new float [noOfRows * noOfColumns];
+	if (!amplitudes)
+		amplitudes = new float [noOfRows * noOfColumns];
 
-		res = pmdGetAmplitudes (hnd, amplitudes, noOfRows * noOfColumns * sizeof (float));
-		if (res != PMD_OK)
-		{
-			pmdGetLastError (hnd, err, 128);
-			ROS_ERROR_STREAM("Could get amplitude values: " << err);
-			pmdClose (hnd);
-			return 1;
-		}
+	res = pmdGetAmplitudes (hnd, amplitudes, noOfRows * noOfColumns * sizeof (float));
+	if (res != PMD_OK)
+	{
+		pmdGetLastError (hnd, err, 128);
+		ROS_ERROR_STREAM("Could get amplitude values: " << err);
+		pmdClose (hnd);
+		return 1;
+	}
 
 	/*
 	 * Creating the pointcloud
@@ -439,10 +445,8 @@ int publishData() {
 
 	if(AmplitudeFilterOn){
 
-
-		for (size_t i = 0; i < cloud_ptr->points.size (); ++i)
-		{
-			if(amplitudes[i]>AmplitudeThreshold){
+		for (size_t i = 0; i < cloud_ptr->points.size (); ++i)	{
+			if(amplitudes[i]>AmplitudeThreshold) {
 				cloud_ptr->points[i].x = cartesianDist[(i*3) + 0];
 				cloud_ptr->points[i].y = cartesianDist[(i*3) + 1];
 				cloud_ptr->points[i].z = cartesianDist[(i*3) + 2];
@@ -453,8 +457,7 @@ int publishData() {
 
 	} else {
 
-		for (size_t i = 0; i < cloud_ptr->points.size (); ++i)
-		{
+		for (size_t i = 0; i < cloud_ptr->points.size (); ++i)	{
 			cloud_ptr->points[i].x = cartesianDist[(i*3) + 0];
 			cloud_ptr->points[i].y = cartesianDist[(i*3) + 1];
 			cloud_ptr->points[i].z = cartesianDist[(i*3) + 2];
