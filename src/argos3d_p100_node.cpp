@@ -361,7 +361,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
  */
 void publishCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr , ros::Publisher pub){
 	PointCloud::Ptr msg (new PointCloud);
-	msg->header.frame_id = "tf_argos";
+	msg->header.frame_id = "tf_argos3d";
 	msg->height = 1;
 	msg->width = cloud_ptr->points.size();
 	for  (unsigned int i =0; i< cloud_ptr->points.size() ; i++)
@@ -504,7 +504,7 @@ int publishData() {
 	 }
 
 	 PointCloud::Ptr msg_non_filtered (new PointCloud);
-	 msg_non_filtered->header.frame_id = "tf_argos";
+	 msg_non_filtered->header.frame_id = "tf_argos3d";
 	 msg_non_filtered->height = 1;
 	 msg_non_filtered->width = noOfRows*noOfColumns;
 	 for  (int i =0; i< noOfRows*noOfColumns ; i++){
