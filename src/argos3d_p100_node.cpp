@@ -311,6 +311,20 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 		return 0;
 	}
 
+	char result[128];
+	result[0] = 0;
+	res = pmdSourceCommand(hnd, result, sizeof(result), "IsCalibrationDataLoaded");
+	if (res != PMD_OK)
+	{
+		pmdGetLastError (0, err, 128);
+		ROS_ERROR_STREAM("Could not execute source command: " << err);
+		return 0;
+	}
+	if (std::string(result) == "YES")
+		ROS_INFO("Calibration file loaded.");
+	else
+		ROS_INFO("No calibration file found");
+
 	res = pmdUpdate (hnd);
 	if (res != PMD_OK)
 	{
