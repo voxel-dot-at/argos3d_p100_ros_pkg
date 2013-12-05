@@ -157,7 +157,7 @@ rosrun argos3d_p100 argos3d_p100_node
 In the software distibuted with your camera there is a calibration file that provides precise 3D position calculation.
 The file is load when the connection with you Argos3D is established.
 
-In order to use i, just copy this file to the folder you will execute the node:
+In order to use it, just copy this file to the folder where you will execute the node:
 
 <pre><code>cp argos3d.cal catkin_ws
 cd catkin_ws
