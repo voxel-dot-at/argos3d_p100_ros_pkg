@@ -107,7 +107,7 @@ catkin_make
 
 #### * Watch our demo video:  ####
 
-> http://youtu.be/CWwY1LJMYmk
+> http://youtu.be/1yVNbUQoMrU
 
 
 #### 3.1 Start the ROS core ####
