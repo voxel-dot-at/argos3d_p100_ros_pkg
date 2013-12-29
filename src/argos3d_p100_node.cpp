@@ -74,6 +74,7 @@ typedef pcl::PointCloud<pcl::PointXYZI> PointCloud;
  */
 int integrationTime;
 int modulationFrequency;
+int frameRate;
 bool bilateralFilter;
 
 bool AtLeastFrequency;
@@ -82,6 +83,7 @@ bool AtMostFrequency;
 bool StatisticalNoiseFilterOn;
 int NoiseFilteringNoOfNeighbours;
 float StdDevMulThreshold;
+
 
 bool AmplitudeFilterOn;
 float AmplitudeThreshold;
@@ -104,7 +106,7 @@ char err[128];
 bool dataPublished;
 ros::Publisher pub_non_filtered;
 ros::Publisher pub_filtered;
-ros::Publisher pub_outliers;
+//ros::Publisher pub_outliers;
 
 /**
  *
@@ -146,12 +148,13 @@ void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 	if(first) {
 		config.Integration_Time = integrationTime;
 		config.Modulation_Frequency = modulationFrequency;
-		config.Bilateral_Filter = bilateralFilter;
+		config.Frame_rate = frameRate;
+		config.Bilateral_Filter = !bilateralFilter;
+		
 		config.Amplitude_Filter_On = AmplitudeFilterOn;
 		config.Amplitude_Threshold = AmplitudeThreshold;
-		integrationTime = modulationFrequency = AmplitudeThreshold = -1;
-		bilateralFilter = !bilateralFilter;
-		AmplitudeFilterOn = !AmplitudeFilterOn;
+		
+		integrationTime = modulationFrequency = frameRate = -1;
 	}
 
 	if(integrationTime != config.Integration_Time) {
@@ -170,6 +173,18 @@ void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 		if (res != PMD_OK) {
 			pmdGetLastError (hnd, err, 128);
 			ROS_WARN_STREAM("Could not set modulation frequency: " << err);
+		}
+	}
+	
+	if(frameRate != config.Frame_rate) {
+		frameRate = config.Frame_rate;
+		err[0] = 0;
+		std::stringstream spt;
+		spt << "SetPhaseTime " << (1000000/(4*frameRate));
+		res = pmdSourceCommand (hnd, err, sizeof(err), spt.str().c_str());
+		if (res != PMD_OK) {
+			pmdGetLastError (hnd, err, 128);
+			ROS_WARN_STREAM("Could not set frame rate: " << err);
 		}
 	}
 
@@ -212,14 +227,15 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	 */
 	integrationTime = 1500;
 	modulationFrequency = 30000000;
+	frameRate = 40;
 	bilateralFilter = false;
 	
 	AtLeastFrequency = false;
 	AtMostFrequency = false;
 
-	StatisticalNoiseFilterOn = false;
+	/*StatisticalNoiseFilterOn = false;
 	NoiseFilteringNoOfNeighbours = 30;
-	StdDevMulThreshold = 0.4;
+	StdDevMulThreshold = 0.4;*/
 
 	AmplitudeFilterOn = false;
 	AmplitudeThreshold = 0;
@@ -236,8 +252,15 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 		// reading heigth
 		else if( std::string(argv[i]) == "-mf" ) {
 			if( sscanf(argv[++i], "%d", &modulationFrequency) != 1 
-				|| modulationFrequency < 5000000 || integrationTime > 30000000 ) {
+				|| modulationFrequency < 5000000 || modulationFrequency > 30000000 ) {
 				ROS_WARN("*invalid modulation frequency");
+				return help();
+			}
+		}
+		if( std::string(argv[i]) == "-fr" ) {
+			if( sscanf(argv[++i], "%d", &frameRate) != 1 
+				|| frameRate < 1 || frameRate > 40 ) {
+				ROS_WARN("*invalid frame rate");
 				return help();
 			}
 		}
@@ -318,6 +341,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	{
 		pmdGetLastError (0, err, 128);
 		ROS_ERROR_STREAM("Could not execute source command: " << err);
+		pmdClose (hnd);
 		return 0;
 	}
 	if (std::string(result) == "YES")
@@ -333,7 +357,6 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 		pmdClose (hnd);
 		return 0;
 	}
-
 
 	PMDDataDescription dd;
 
@@ -360,7 +383,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	 */
 	pub_non_filtered = nh.advertise<PointCloud> ("depth_non_filtered", 1);
 	pub_filtered = nh.advertise<PointCloud> ("depth_filtered", 1);
-	pub_outliers = nh.advertise<PointCloud> ("depth_outliers", 1);
+	//pub_outliers = nh.advertise<PointCloud> ("depth_outliers", 1);
 	dataPublished=true;
 	return 1;
 }
@@ -373,7 +396,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
  * @param [in] ros::NodeHandle
  *
  */
-void publishCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr , ros::Publisher pub){
+/*void publishCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr , ros::Publisher pub){
 	PointCloud::Ptr msg (new PointCloud);
 	msg->header.frame_id = "tf_argos3d";
 	msg->height = 1;
@@ -386,7 +409,7 @@ void publishCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr , ros::Publishe
 	msg->header.stamp = ros::Time::now();
 #endif
 	pub.publish (msg);
-}
+}*/
 
 
 static float * cartesianDist = 0;
@@ -445,31 +468,43 @@ int publishData() {
 	/*
 	 * Creating the pointcloud
 	 */
-	pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZI>);
-	pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr_filtered (new pcl::PointCloud<pcl::PointXYZI>);
-	pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr_outliers (new pcl::PointCloud<pcl::PointXYZI>);
+	//pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZI>);
+	//pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr_filtered (new pcl::PointCloud<pcl::PointXYZI>);
+	//pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr_outliers (new pcl::PointCloud<pcl::PointXYZI>);
 
 	// Fill in the cloud data
-	cloud_ptr->width    = noOfColumns*noOfRows;
-	cloud_ptr->height   = 1;
-	cloud_ptr->is_dense = false;
-	cloud_ptr->points.resize (cloud_ptr->width * cloud_ptr->height);
+	PointCloud::Ptr msg_non_filtered (new PointCloud);
+	msg_non_filtered->header.frame_id = "tf_argos3d";
+	msg_non_filtered->height = 1;
+	msg_non_filtered->width = noOfRows*noOfColumns;
+	
+	PointCloud::Ptr msg_filtered (new PointCloud);
+	msg_filtered->header.frame_id = "tf_argos3d";
+	msg_filtered->width    = 1;
+	msg_filtered->height   = noOfColumns*noOfRows;
+	//msg_filtered->is_dense = false;
+	//msg_filtered->points.resize (noOfRows*noOfColumns);
 
 	int countWidth=0;
 
-	if(AmplitudeFilterOn){
+	/*if(AmplitudeFilterOn){*/
 
-		for (size_t i = 0; i < cloud_ptr->points.size (); ++i)	{
-			if(amplitudes[i]>AmplitudeThreshold) {
-				cloud_ptr->points[i].x = cartesianDist[(i*3) + 0];
-				cloud_ptr->points[i].y = cartesianDist[(i*3) + 1];
-				cloud_ptr->points[i].z = cartesianDist[(i*3) + 2];
-				cloud_ptr->points[i].intensity = amplitudes[i];
+		for (size_t i = 0; i < noOfRows*noOfColumns; ++i)	{
+			pcl::PointXYZI temp_point;
+			temp_point.x = cartesianDist[(i*3) + 0];
+		 	temp_point.y = cartesianDist[(i*3) + 1];
+		 	temp_point.z = cartesianDist[(i*3) + 2];
+		 	temp_point.intensity = amplitudes[i];
+
+			if(AmplitudeFilterOn==true && amplitudes[i]>AmplitudeThreshold) {
+				msg_filtered->points.push_back(temp_point);
 				countWidth++;
 			}
+			msg_non_filtered->points.push_back(temp_point);
+			//countWidth++;
 		}
-
-	} else {
+	msg_filtered->height   = countWidth;
+	/*} else {
 
 		for (size_t i = 0; i < cloud_ptr->points.size (); ++i)	{
 			cloud_ptr->points[i].x = cartesianDist[(i*3) + 0];
@@ -479,7 +514,7 @@ int publishData() {
 			countWidth++;
 		}
 	}
-
+	
 	cloud_ptr->width    = countWidth;
 	cloud_ptr->points.resize (cloud_ptr->width * cloud_ptr->height);
 
@@ -487,7 +522,7 @@ int publishData() {
 	 * Filtering the Data
 	 */
 
-	 if(StatisticalNoiseFilterOn){
+	 /*if(StatisticalNoiseFilterOn){
 		 pcl::StatisticalOutlierRemoval<pcl::PointXYZI> sor;
 		 sor.setInputCloud (cloud_ptr);
 		 sor.setMeanK (30);
@@ -495,15 +530,19 @@ int publishData() {
 		 sor.filter (*cloud_ptr_filtered);
 		 sor.setNegative (true);
 		 sor.filter (*cloud_ptr_outliers);
-	 }
+	 }*/
 
 	 /*
 	  * Publishing the messages
 	  */
-
 	 if(AmplitudeFilterOn){
-
-		 if(StatisticalNoiseFilterOn){
+		#if ROS_VERSION > ROS_VERSION_COMBINED(1,9,49)
+			msg_filtered->header.stamp = ros::Time::now().toNSec();
+		#else
+			msg_filtered->header.stamp = ros::Time::now();
+		#endif
+			pub_filtered.publish (msg_filtered);
+		 /*if(StatisticalNoiseFilterOn){
 			 publishCloud(cloud_ptr_filtered, pub_filtered);
 			 publishCloud(cloud_ptr_outliers, pub_outliers);
 		 } else {
@@ -516,10 +555,10 @@ int publishData() {
 		 if(StatisticalNoiseFilterOn){
 			 publishCloud(cloud_ptr_filtered, pub_filtered);
 			 publishCloud(cloud_ptr_outliers, pub_outliers);
-		 }
+		 }*/
 
 	 }
-
+/*
 	 PointCloud::Ptr msg_non_filtered (new PointCloud);
 	 msg_non_filtered->header.frame_id = "tf_argos3d";
 	 msg_non_filtered->height = 1;
@@ -531,8 +570,8 @@ int publishData() {
 		 temp_point.z = cartesianDist[(i*3) + 2];
 		 temp_point.intensity = amplitudes[i];
 		 msg_non_filtered->points.push_back(temp_point);
-		 //msg_non_filtered->points.push_back ( pcl::PointXYZI(cartesianDist[(i*3) + 0],cartesianDist[(i*3) + 1],cartesianDist[(i*3) + 2], amplitudes[i]) );
 	 }
+*/
 #if ROS_VERSION > ROS_VERSION_COMBINED(1,9,49)
 	msg_non_filtered->header.stamp = ros::Time::now().toNSec();
 #else
