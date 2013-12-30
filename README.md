@@ -179,8 +179,8 @@ The argos3d_p100_node will show a message that confirmes you if the calibration 
 
 Add a Pointcloud2 topic to visualize the depth clouds. 
 Two different point sets are published with following topic names:
-> - **/depth_non_filtered :** raw data from the pmd camera
-> - **/depth_filtered : after** applying amplitude threshold, if selected
+> - **/depth_non_filtered :** raw data from the pmd camera.
+> - **/depth_filtered : ** after applying amplitude threshold, if selected.
 
 To do this please perform the following steps:
 
