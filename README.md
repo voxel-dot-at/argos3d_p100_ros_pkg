@@ -141,12 +141,16 @@ rosrun argos3d_p100 argos3d_p100_node
 	-bf *Bilateral_Filter* 
 	  Turns bilateral filtering on or off 
 	  (ON: if set | OFF: default) 
+	-fr *Frame_Rate* 
+	  Set the frame rate of the camera by setting the Phase Time 
+	  (min: 1 | max: 40 | default: 40)
 	-af *Amplitude_Filter_On* 
 	  Whether to apply amplitude filter or not. Image pixels with amplitude values less than the threshold will be filtered out 
 	  (ON: if set | OFF: odefault) 
 	-at *Amplitude_Threshold* 
 	  What should be the amplitude filter threshold. Image pixels with lesser aplitude values will be filtered out. Amplitude Filter Status should be true to use this filter 
 	  (min: 0 | max: 2500 | default: 0) 
+	 
 
  Example:
  rosrun argos3d_p100 argos3d_p100_node -it 1500 -mf 30000000 
@@ -176,7 +180,7 @@ The argos3d_p100_node will show a message that confirmes you if the calibration 
 Add a Pointcloud2 topic to visualize the depth clouds. 
 Two different point sets are published with following topic names:
 > - **/depth_non_filtered :** raw data from the pmd camera
-> - **/depth_filtered : after** applying statistical outlier detection from pcl
+> - **/depth_filtered : after** applying amplitude threshold, if selected
 
 To do this please perform the following steps:
 
@@ -199,5 +203,6 @@ Following camera parameters and filtering methods can be accessed using the dyna
 * **Integration_Time :** Modifies the integration time of the sensor.
 * **Modulation_Frequency :** Modifies the modulation frequency of the sensor.
 * **Bilateral_Filter :** Turns bilateral filtering on or off.
-* **Amplitude_Filter_On :** Use  the amplitude filter or not
+* **Frame_Rate :** Sets the frame rate by changing the Phase Time
+* **Amplitude_Filter_On :** Use the amplitude filter or not
 * **Amplitude_Threshold :** Image pixels with smaller amplitude values will be filtered out. Amplitude_Filter_On status needs to be true to apply this filter value.

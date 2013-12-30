@@ -77,14 +77,6 @@ int modulationFrequency;
 int frameRate;
 bool bilateralFilter;
 
-bool AtLeastFrequency;
-bool AtMostFrequency;
-
-bool StatisticalNoiseFilterOn;
-int NoiseFilteringNoOfNeighbours;
-float StdDevMulThreshold;
-
-
 bool AmplitudeFilterOn;
 float AmplitudeThreshold;
 
@@ -106,7 +98,6 @@ char err[128];
 bool dataPublished;
 ros::Publisher pub_non_filtered;
 ros::Publisher pub_filtered;
-//ros::Publisher pub_outliers;
 
 /**
  *
@@ -121,11 +112,7 @@ int help() {
 		<< "\t-it *Integration_Time* \n\tIntegration time(in msec) for the sensor \n\t(min: 100 | max: 2700 | default: 1500) "<< std::endl
 		<< "\t-mf  *Modulation_Frequency* \n\tSet the modulation frequency(Hz) of the sensor \n\t(min: 5000000 | max: 30000000 | default: 30000000) "<< std::endl
 		<< "\t-bf *Bilateral_Filter* \n\tTurns bilateral filtering on or off \n\t(ON: if set | OFF: default) "<< std::endl
-		/*<< "\t-al *At_Least* \n\tModulation Frequency no less than the entered frequency \n\t(ON: 1 | OFF: 0 | default: OFF) "<< std::endl
-		<< "\t-am *At_Most* \n\tModulation Frequency no more than the entered frequency \n\t(ON: 1 | OFF: 0 | default: OFF) "<< std::endl
-		<< "\t-snf *Statistical_Noise_Filter_On* \n\tWhether to apply statistical noise filter from pcl or not \n\t(ON: 1 | OFF: 0 | default: OFF) "<< std::endl
-		<< "\t-nfn *Noise_Filtering_NoOfNeighbours* \n\tNo. of neighbours to be considered for applying statistical noise reduction \n\t(min: 1 | max: 200 | default: 30) "<< std::endl
-		<< "\t-sdt *Std_Dev_Mul_Threshold* \n\tStandard Deviation Multiplier Threshold for applying statistical noise reduction \n\t(min: 0.0 | max: 10.0 | default: 0.4) "<< std::endl*/
+		<< "\t-fr *Frame_Rate* \n\tSet the frame rate of the camera by setting the Phase Time \n\t(min: 1 | max: 40 | default: 40)" << std::endl
 		<< "\t-af *Amplitude_Filter_On* \n\tWhether to apply amplitude filter or not. Image pixels with amplitude values less than the threshold will be filtered out \n\t(ON: if set | OFF: default) " << std::endl
 		<< "\t-at *Amplitude_Threshold* \n\tWhat should be the amplitude filter threshold. Image pixels with lesser aplitude values will be filtered out. Amplitude Filter Status should be true to use this filter \n\t(min: 0 | max: 2500 | default: 0) "<< std::endl
 		<< "\n Example:" << std::endl
@@ -201,13 +188,6 @@ void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 		}
 	}
 
-	/*AtLeastFrequency = config.At_Least;
-	AtMostFrequency = config.At_Most;
-
-	StatisticalNoiseFilterOn = config.Statistical_Noise_Filter_On;
-	NoiseFilteringNoOfNeighbours = config.Noise_Filtering_NoOfNeighbours;
-	StdDevMulThreshold = (float)config.Std_Dev_Mul_Threshold;*/
-
 	AmplitudeFilterOn = config.Amplitude_Filter_On;
 	AmplitudeThreshold = config.Amplitude_Threshold;
 }
@@ -230,13 +210,6 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	frameRate = 40;
 	bilateralFilter = false;
 	
-	AtLeastFrequency = false;
-	AtMostFrequency = false;
-
-	/*StatisticalNoiseFilterOn = false;
-	NoiseFilteringNoOfNeighbours = 30;
-	StdDevMulThreshold = 0.4;*/
-
 	AmplitudeFilterOn = false;
 	AmplitudeThreshold = 0;
 
@@ -267,33 +240,6 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 		else if( std::string(argv[i]) == "-bf" ) {
 			bilateralFilter = true;
 		}
-		// reading images file name
-		/*else if( std::string(argv[i]) == "-al" ) {
-			AtLeastFrequency = true;
-		}
-		// reading calibration paremeter for left camera
-		else if( std::string(argv[i]) == "-am" ) {
-			AtMostFrequency = true;
-		}
-		// reading calibration paremeter for right camera
-		else if( std::string(argv[i]) == "-snf" ) {
-			StatisticalNoiseFilterOn = true;
-		}
-		// corner distance
-		else if( std::string(argv[i]) == "-nfn" ) {
-			if( sscanf(argv[++i], "%d", &NoiseFilteringNoOfNeighbours) != 1 
-				|| NoiseFilteringNoOfNeighbours < 1 || NoiseFilteringNoOfNeighbours > 200 ) {
-				std::cout << "*invalid noise filtering No. of neighbours" << std::endl;
-				return help();
-			}
-		}
-		else if( std::string(argv[i]) == "-sdt" ) {
-		   if( sscanf(argv[++i], "%f", &StdDevMulThreshold) != 1 
-				|| StdDevMulThreshold < 1.0f || StdDevMulThreshold > 10.0f ) {
-				std::cout << "*invalid standard deviation multiplier threshold" << std::endl;
-				return help();
-			}
-		}*/
 		// additional parameters
 		else if( std::string(argv[i]) == "-af" ) {
 			AmplitudeFilterOn = true;
@@ -383,34 +329,9 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	 */
 	pub_non_filtered = nh.advertise<PointCloud> ("depth_non_filtered", 1);
 	pub_filtered = nh.advertise<PointCloud> ("depth_filtered", 1);
-	//pub_outliers = nh.advertise<PointCloud> ("depth_outliers", 1);
 	dataPublished=true;
 	return 1;
 }
-
-/**
- *
- * @brief Publishes the point clod passed as a parameter
- *
- * @param [in] pcl::PointCloud<pcl::PointXYZI>::Ptr
- * @param [in] ros::NodeHandle
- *
- */
-/*void publishCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr , ros::Publisher pub){
-	PointCloud::Ptr msg (new PointCloud);
-	msg->header.frame_id = "tf_argos3d";
-	msg->height = 1;
-	msg->width = cloud_ptr->points.size();
-	for  (unsigned int i =0; i< cloud_ptr->points.size() ; i++)
-		msg->points.push_back ( pcl::PointXYZI(cloud_ptr->points[i]) );
-#if ROS_VERSION > ROS_VERSION_COMBINED(1,9,49)
-	msg->header.stamp = ros::Time::now().toNSec();
-#else
-	msg->header.stamp = ros::Time::now();
-#endif
-	pub.publish (msg);
-}*/
-
 
 static float * cartesianDist = 0;
 static float * amplitudes = 0;
@@ -468,10 +389,7 @@ int publishData() {
 	/*
 	 * Creating the pointcloud
 	 */
-	//pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZI>);
-	//pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr_filtered (new pcl::PointCloud<pcl::PointXYZI>);
-	//pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr_outliers (new pcl::PointCloud<pcl::PointXYZI>);
-
+	 
 	// Fill in the cloud data
 	PointCloud::Ptr msg_non_filtered (new PointCloud);
 	msg_non_filtered->header.frame_id = "tf_argos3d";
@@ -482,55 +400,25 @@ int publishData() {
 	msg_filtered->header.frame_id = "tf_argos3d";
 	msg_filtered->width    = 1;
 	msg_filtered->height   = noOfColumns*noOfRows;
-	//msg_filtered->is_dense = false;
+	msg_filtered->is_dense = false;
 	//msg_filtered->points.resize (noOfRows*noOfColumns);
 
 	int countWidth=0;
 
-	/*if(AmplitudeFilterOn){*/
+	for (size_t i = 0; i < noOfRows*noOfColumns; ++i)	{
+		pcl::PointXYZI temp_point;
+		temp_point.x = cartesianDist[(i*3) + 0];
+	 	temp_point.y = cartesianDist[(i*3) + 1];
+	 	temp_point.z = cartesianDist[(i*3) + 2];
+	 	temp_point.intensity = amplitudes[i];
 
-		for (size_t i = 0; i < noOfRows*noOfColumns; ++i)	{
-			pcl::PointXYZI temp_point;
-			temp_point.x = cartesianDist[(i*3) + 0];
-		 	temp_point.y = cartesianDist[(i*3) + 1];
-		 	temp_point.z = cartesianDist[(i*3) + 2];
-		 	temp_point.intensity = amplitudes[i];
-
-			if(AmplitudeFilterOn==true && amplitudes[i]>AmplitudeThreshold) {
-				msg_filtered->points.push_back(temp_point);
-				countWidth++;
-			}
-			msg_non_filtered->points.push_back(temp_point);
-			//countWidth++;
-		}
-	msg_filtered->height   = countWidth;
-	/*} else {
-
-		for (size_t i = 0; i < cloud_ptr->points.size (); ++i)	{
-			cloud_ptr->points[i].x = cartesianDist[(i*3) + 0];
-			cloud_ptr->points[i].y = cartesianDist[(i*3) + 1];
-			cloud_ptr->points[i].z = cartesianDist[(i*3) + 2];
-			cloud_ptr->points[i].intensity = amplitudes[i];
+		if(AmplitudeFilterOn==true && amplitudes[i]>AmplitudeThreshold) {
+			msg_filtered->points.push_back(temp_point);
 			countWidth++;
 		}
+		msg_non_filtered->points.push_back(temp_point);
 	}
-	
-	cloud_ptr->width    = countWidth;
-	cloud_ptr->points.resize (cloud_ptr->width * cloud_ptr->height);
-
-	/*
-	 * Filtering the Data
-	 */
-
-	 /*if(StatisticalNoiseFilterOn){
-		 pcl::StatisticalOutlierRemoval<pcl::PointXYZI> sor;
-		 sor.setInputCloud (cloud_ptr);
-		 sor.setMeanK (30);
-		 sor.setStddevMulThresh (0.4);
-		 sor.filter (*cloud_ptr_filtered);
-		 sor.setNegative (true);
-		 sor.filter (*cloud_ptr_outliers);
-	 }*/
+	msg_filtered->height   = countWidth;
 
 	 /*
 	  * Publishing the messages
@@ -542,42 +430,14 @@ int publishData() {
 			msg_filtered->header.stamp = ros::Time::now();
 		#endif
 			pub_filtered.publish (msg_filtered);
-		 /*if(StatisticalNoiseFilterOn){
-			 publishCloud(cloud_ptr_filtered, pub_filtered);
-			 publishCloud(cloud_ptr_outliers, pub_outliers);
-		 } else {
-			 publishCloud(cloud_ptr, pub_filtered);
-		 }
-
-
-	 } else {
-
-		 if(StatisticalNoiseFilterOn){
-			 publishCloud(cloud_ptr_filtered, pub_filtered);
-			 publishCloud(cloud_ptr_outliers, pub_outliers);
-		 }*/
-
 	 }
-/*
-	 PointCloud::Ptr msg_non_filtered (new PointCloud);
-	 msg_non_filtered->header.frame_id = "tf_argos3d";
-	 msg_non_filtered->height = 1;
-	 msg_non_filtered->width = noOfRows*noOfColumns;
-	 for  (int i =0; i< noOfRows*noOfColumns ; i++){
-		 pcl::PointXYZI temp_point;
-		 temp_point.x = cartesianDist[(i*3) + 0];
-		 temp_point.y = cartesianDist[(i*3) + 1];
-		 temp_point.z = cartesianDist[(i*3) + 2];
-		 temp_point.intensity = amplitudes[i];
-		 msg_non_filtered->points.push_back(temp_point);
-	 }
-*/
-#if ROS_VERSION > ROS_VERSION_COMBINED(1,9,49)
-	msg_non_filtered->header.stamp = ros::Time::now().toNSec();
-#else
-	msg_non_filtered->header.stamp = ros::Time::now();
-#endif
-	pub_non_filtered.publish (msg_non_filtered);
+
+	#if ROS_VERSION > ROS_VERSION_COMBINED(1,9,49)
+		msg_non_filtered->header.stamp = ros::Time::now().toNSec();
+	#else
+		msg_non_filtered->header.stamp = ros::Time::now();
+	#endif
+		pub_non_filtered.publish (msg_non_filtered);
 
 	return 1;
 }
