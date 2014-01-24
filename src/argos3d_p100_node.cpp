@@ -28,11 +28,7 @@
  *
  * @section intro_sec Introduction
  *
- * This software defines a interface for working through the network interface with
- * the ToF camera Sentis-m100 form Bluetechnix GmbH. It allows to create tcp control 
- * connections in order to write and read register of the camera which define its 
- * configuration. Also provides a continuous reader for the image frames through the 
- * udp data connection.
+ * This software defines a interface for working the ToF camera Argos3D-P100 from Bluetechnix GmbH.
  *
  * @section install_sec Installation
  *
