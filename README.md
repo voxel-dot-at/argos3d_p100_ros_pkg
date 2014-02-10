@@ -49,9 +49,9 @@ of your operating system version.
 
 Install the driver for using the ToF camera:
 
-In Ubuntu/linux copy the file from the driver folder to **/usr/udev/rules.d/**
+In Ubuntu/linux copy the file from the driver folder to **/etc/udev/rules.d/**
 <pre><code>cd driver
-sudo cp 10-pmd-ubuntu.rules /usr/udev/rules.d/
+sudo cp 10-pmd-ubuntu.rules /etc/udev/rules.d/
 </code></pre>
 This will set the right permissions to allow not sudo users to use the camera.
 
