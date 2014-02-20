@@ -8,10 +8,11 @@ find_package(PMD REQUIRED)
 ## preprocessor definitions
 add_definitions(-DPMD_PLUGIN_DIR="${PMD_PLUGIN_DIR}/")
 
+find_package(PCL REQUIRED)
+
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
-  pcl_ros
   roscpp
   roslib
   rospy
@@ -19,6 +20,11 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf  
+  pcl_ros
+  pcl_conversions
+  image_transport
+  camera_info_manager
+  camera_calibration_parsers
 )
 
 # PMD SDK Library
@@ -74,6 +80,7 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${PMD_INCLUDE_DIR}
+  ${PCL_INCLUDE_DIRS}
 )
 
 
@@ -82,7 +89,7 @@ add_executable(argos3d_p100_node src/argos3d_p100_node.cpp)
 
 add_dependencies(argos3d_p100_node ${PROJECT_NAME}_gencfg) 
 
-target_link_libraries(argos3d_p100_node pmd_sdk pmdaccess2 ${catkin_LIBRARIES})
+target_link_libraries(argos3d_p100_node pmd_sdk pmdaccess2 ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 #############
 ## Install ##

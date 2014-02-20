@@ -43,19 +43,31 @@
 #define PROC_PARAM ""
 #include <pmdsdk2.h>
 
-#include <ros/console.h>
+// ROS communication
 #include <ros/ros.h>
+#include <image_transport/image_transport.h>
+#include <camera_info_manager/camera_info_manager.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/SetCameraInfo.h>
+
+#include <ros/console.h>
 #include <tf/transform_listener.h>
-#include <ros/publisher.h>
+
 #include <pcl_ros/point_cloud.h>
+
+// PCL 
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/conversions.h>
+#include <pcl/io/point_cloud_image_extractors.h>
 
+// Standard libs
 #include <stdio.h>
 #include <time.h>
 #include <sstream>
 
+// Dynamic reconfigure
 #include <argos3d_p100/argos3d_p100Config.h>
 #include <dynamic_reconfigure/server.h>
 
@@ -91,9 +103,11 @@ char err[128];
  * ROS Parameters
  */
 
-bool dataPublished;
 ros::Publisher pub_non_filtered;
 ros::Publisher pub_filtered;
+
+camera_info_manager::CameraInfoManager *cim;
+image_transport::CameraPublisher pub;
 
 /**
  *
@@ -187,6 +201,156 @@ void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 	AmplitudeFilterOn = config.Amplitude_Filter_On;
 	AmplitudeThreshold = config.Amplitude_Threshold;
 }
+
+static float * cartesianDist = 0;
+static float * amplitudes = 0;
+/**
+ *
+ * @brief Publish the data based on set up parameters.
+ *
+ */
+int publishData() {
+
+	/*
+	 * Update Camera settings
+	 */
+	res = pmdUpdate (hnd);
+	if (res != PMD_OK)
+	{
+		pmdGetLastError (hnd, err, 128);
+		ROS_ERROR_STREAM("Could transfer data: " << err);
+		pmdClose (hnd);
+		return 0;
+	}
+
+	/*
+	 * Obtain PointClouds
+	 */
+	if (!cartesianDist)
+		cartesianDist = new float [noOfRows * noOfColumns * 3];
+	res = pmdGet3DCoordinates (hnd, cartesianDist, noOfColumns * noOfRows * 3 * sizeof (float));
+	if (res != PMD_OK)
+	{
+		pmdGetLastError (hnd, err, 128);
+		ROS_ERROR_STREAM("Could get cartesian coordinates: " << err);
+		pmdClose (hnd);
+		return 0;
+	}
+
+
+	/*
+	 * Obtain Amplitude Values
+	 */
+	if (!amplitudes)
+		amplitudes = new float [noOfRows * noOfColumns];
+
+	res = pmdGetAmplitudes (hnd, amplitudes, noOfRows * noOfColumns * sizeof (float));
+	if (res != PMD_OK)
+	{
+		pmdGetLastError (hnd, err, 128);
+		ROS_ERROR_STREAM("Could get amplitude values: " << err);
+		pmdClose (hnd);
+		return 1;
+	}
+
+	/*
+	 * Creating the pointcloud
+	 */
+	 
+	// Fill in the cloud data
+	PointCloud::Ptr msg_non_filtered (new PointCloud);
+	msg_non_filtered->header.frame_id = "tf_argos3d";
+	msg_non_filtered->height = noOfRows;
+	msg_non_filtered->width = noOfColumns;
+	msg_non_filtered->resize(noOfRows*noOfColumns);	
+	msg_non_filtered->is_dense = false;
+
+	PointCloud::Ptr msg_filtered (new PointCloud);
+	msg_filtered->header.frame_id = "tf_argos3d";
+	msg_filtered->height = noOfRows;
+	msg_filtered->width = noOfColumns;
+	msg_filtered->resize(noOfRows*noOfColumns);	
+	msg_filtered->is_dense = false;
+
+	int countWidth=0;
+	int width = 159;
+    	int height = 0;
+	for (size_t i = 0; i < noOfRows*noOfColumns; ++i) {
+		pcl::PointXYZI temp_point;
+		temp_point.x = cartesianDist[(i*3) + 0];
+	 	temp_point.y = cartesianDist[(i*3) + 1];
+		float x = cartesianDist[(i*3) + 2];
+		if (x<=0.f || x>4.f)
+		  temp_point.z = nanf("");
+		else
+		  temp_point.z = cartesianDist[(i*3) + 2]; //x
+		
+		temp_point.intensity = amplitudes[i];
+
+		msg_non_filtered->at(width,height) = temp_point;
+	
+		if(AmplitudeFilterOn==true && amplitudes[i]<=AmplitudeThreshold)
+			temp_point.z = nanf("");
+		
+		msg_filtered->at(width,height) = temp_point;
+		
+		if (width == 0) {
+		    width = 159;
+		    height++;
+		} else
+		    width--;
+	}
+
+	//msg_filtered->height   = countWidth;
+
+	 /*
+	  * Publishing the messages
+	  */
+	 if(AmplitudeFilterOn){
+		#if ROS_VERSION > ROS_VERSION_COMBINED(1,9,49)
+			msg_filtered->header.stamp = ros::Time::now().toNSec();
+		#else
+			msg_filtered->header.stamp = ros::Time::now();
+		#endif
+			pub_filtered.publish (msg_filtered);
+	 }
+
+	
+	#if ROS_VERSION > ROS_VERSION_COMBINED(1,9,49)
+		msg_non_filtered->header.stamp = ros::Time::now().toNSec();
+	#else
+		msg_non_filtered->header.stamp = ros::Time::now();
+	#endif
+		pub_non_filtered.publish (msg_non_filtered);
+
+	pcl::PCLImage::Ptr temp (new pcl::PCLImage);
+        pcl::io::PointCloudImageExtractorFromIntensityField<pcl::PointXYZI> pcie;
+	pcie.setScalingMethod(pcl::io::PointCloudImageExtractorWithScaling<pcl::PointXYZI>::SCALING_FIXED_FACTOR);
+	pcie.setScalingFactor(1.f/16);
+	pcie.extract(*msg_non_filtered, *temp);	
+
+	sensor_msgs::ImagePtr output (new sensor_msgs::Image);
+	pcl_conversions::moveFromPCL(*temp, *output);
+
+	sensor_msgs::CameraInfoPtr ci(new sensor_msgs::CameraInfo(cim->getCameraInfo()));
+	ci->header.frame_id = "tf_argos3d";
+	output->header.frame_id = "tf_argos3d";
+
+	pub.publish(output,ci);
+	
+
+	return 1;
+}
+
+/*bool setCameraInfo(sensor_msgs::SetCameraInfo::Request &req, sensor_msgs::SetCameraInfo::Response &rsp)
+  {    
+	ROS_INFO("New camera info received");
+    cim->setCameraInfo(req,rsp);
+    
+    //rsp.success = true;
+
+    return 1;
+  }*/
 
 /**
  *
@@ -323,118 +487,13 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	/*
 	 * ROS Node Initialization
 	 */
-	pub_non_filtered = nh.advertise<PointCloud> ("depth_non_filtered", 1);
-	pub_filtered = nh.advertise<PointCloud> ("depth_filtered", 1);
-	dataPublished=true;
-	return 1;
-}
 
-static float * cartesianDist = 0;
-static float * amplitudes = 0;
-
-
-/**
- *
- * @brief Publish the data based on set up parameters.
- *
- */
-int publishData() {
-
-	/*
-	 * Update Camera settings
-	 */
-	res = pmdUpdate (hnd);
-	if (res != PMD_OK)
-	{
-		pmdGetLastError (hnd, err, 128);
-		ROS_ERROR_STREAM("Could transfer data: " << err);
-		pmdClose (hnd);
-		return 0;
-	}
-
-	/*
-	 * Obtain PointClouds
-	 */
-	if (!cartesianDist)
-		cartesianDist = new float [noOfRows * noOfColumns * 3];
-	res = pmdGet3DCoordinates (hnd, cartesianDist, noOfColumns * noOfRows * 3 * sizeof (float));
-	if (res != PMD_OK)
-	{
-		pmdGetLastError (hnd, err, 128);
-		ROS_ERROR_STREAM("Could get cartesian coordinates: " << err);
-		pmdClose (hnd);
-		return 0;
-	}
-
-
-	/*
-	 * Obtain Amplitude Values
-	 */
-	if (!amplitudes)
-		amplitudes = new float [noOfRows * noOfColumns];
-
-	res = pmdGetAmplitudes (hnd, amplitudes, noOfRows * noOfColumns * sizeof (float));
-	if (res != PMD_OK)
-	{
-		pmdGetLastError (hnd, err, 128);
-		ROS_ERROR_STREAM("Could get amplitude values: " << err);
-		pmdClose (hnd);
-		return 1;
-	}
-
-	/*
-	 * Creating the pointcloud
-	 */
-	 
-	// Fill in the cloud data
-	PointCloud::Ptr msg_non_filtered (new PointCloud);
-	msg_non_filtered->header.frame_id = "tf_argos3d";
-	msg_non_filtered->height = 1;
-	msg_non_filtered->width = noOfRows*noOfColumns;
+	image_transport::ImageTransport it(nh);
+	cim = new camera_info_manager::CameraInfoManager(nh,"argos3d_p100","package://argos3d_p100/calib.yml");
+	pub = it.advertiseCamera("argos3d_p100/image_raw", 1);
 	
-	PointCloud::Ptr msg_filtered (new PointCloud);
-	msg_filtered->header.frame_id = "tf_argos3d";
-	msg_filtered->width    = 1;
-	msg_filtered->height   = noOfColumns*noOfRows;
-	msg_filtered->is_dense = false;
-	//msg_filtered->points.resize (noOfRows*noOfColumns);
-
-	int countWidth=0;
-
-	for (size_t i = 0; i < noOfRows*noOfColumns; ++i)	{
-		pcl::PointXYZI temp_point;
-		temp_point.x = cartesianDist[(i*3) + 0];
-	 	temp_point.y = cartesianDist[(i*3) + 1];
-	 	temp_point.z = cartesianDist[(i*3) + 2];
-	 	temp_point.intensity = amplitudes[i];
-
-		if(AmplitudeFilterOn==true && amplitudes[i]>AmplitudeThreshold) {
-			msg_filtered->points.push_back(temp_point);
-			countWidth++;
-		}
-		msg_non_filtered->points.push_back(temp_point);
-	}
-	msg_filtered->height   = countWidth;
-
-	 /*
-	  * Publishing the messages
-	  */
-	 if(AmplitudeFilterOn){
-		#if ROS_VERSION > ROS_VERSION_COMBINED(1,9,49)
-			msg_filtered->header.stamp = ros::Time::now().toNSec();
-		#else
-			msg_filtered->header.stamp = ros::Time::now();
-		#endif
-			pub_filtered.publish (msg_filtered);
-	 }
-
-	#if ROS_VERSION > ROS_VERSION_COMBINED(1,9,49)
-		msg_non_filtered->header.stamp = ros::Time::now().toNSec();
-	#else
-		msg_non_filtered->header.stamp = ros::Time::now();
-	#endif
-		pub_non_filtered.publish (msg_non_filtered);
-
+	pub_non_filtered = nh.advertise<pcl::PCLPointCloud2> ("depth_non_filtered", 1);
+	pub_filtered = nh.advertise<pcl::PCLPointCloud2> ("depth_filtered", 1);
 	return 1;
 }
 
@@ -462,9 +521,9 @@ int main(int argc, char *argv[]) {
 		first = false;
 		ROS_INFO("Initalized Camera... Reading Data");
 		ros::Rate loop_rate(10);
-		while (nh.ok() && dataPublished)
+		while (nh.ok())
 		{
-			if(publishData()) dataPublished==true;
+			publishData();
 			ros::spinOnce ();
 			loop_rate.sleep ();
 		}
