@@ -212,8 +212,7 @@ Following camera parameters and filtering methods can be accessed using the dyna
 * **Integration_Time :** Modifies the integration time of the sensor.
 * **Modulation_Frequency :** Modifies the modulation frequency of the sensor.
 * **Bilateral_Filter :** Turns bilateral filtering on or off.
-* **Frame_Rate :** Sets the frame rate by changing the Phase Time-
-* **NOTE**  (Please be careful when setting values higher than 40 FPS without using an extra cooling system. The camera can stress by overheating and be damaged).*
+* **Frame_Rate :** Sets the frame rate by changing the Phase Time. **NOTE**  (Please be careful when setting values higher than 40 FPS without using an extra cooling system. The camera can stress by overheating and be damaged).
 * **Flip_X :** Flip 3d data in the x coordinate.
 * **Flip_Y :** Flip 3d data in the y coordinate.
 * **Amplitude_Filter_On :** Use the amplitude filter or not
