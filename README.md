@@ -9,6 +9,9 @@ The package includes an example allowing you to visualize images using the rviz 
 It demostrates how to use the camera within ROS and the different parameter configurations of the P100
 as well as its capabilities.
 
+To get more information about the Time of Flight camera Argos3D P100 please visit Bluetechnix website:
+http://ww2.bluetechnix.com/en/products/depthsensing/product/argos3d-p100/
+
 ## First step: Get ROS ##
 
 The argos3d_p100_ros_kg works with ROS versions groovy and hydro. 
@@ -142,8 +145,14 @@ rosrun argos3d_p100 argos3d_p100_node
 	  Turns bilateral filtering on or off 
 	  (ON: if set | OFF: default) 
 	-fr *Frame_Rate* 
-	  Set the frame rate of the camera by setting the Phase Time 
-	  (min: 1 | max: 40 | default: 40)
+	  Set the frame rate of the camera by setting the Phase Time (Please be careful when setting values higher than 40 FPS without using an extra cooling system. The camera can stress by overheating and be damaged). 
+	  (min: 1 | max: 160 | default: 40)
+	-flip_x *flip_x* 
+	  Flip images in the x coordinate. 
+	  (ON: if set | OFF: default)
+	-flip_y *flip_y* 
+	  Flip images in the y coordinate. 
+  	  (ON: if set | OFF: default)
 	-af *Amplitude_Filter_On* 
 	  Whether to apply amplitude filter or not. Image pixels with amplitude values less than the threshold will be filtered out 
 	  (ON: if set | OFF: odefault) 
@@ -180,7 +189,7 @@ The argos3d_p100_node will show a message that confirmes you if the calibration 
 Add a Pointcloud2 topic to visualize the depth clouds. 
 Two different point sets are published with following topic names:
 > - **/depth_non_filtered :** raw data from the pmd camera.
-> - **/depth_filtered : ** after applying amplitude threshold, if selected.
+> - **/depth_filtered :** after applying amplitude threshold, if selected.
 
 To do this please perform the following steps:
 
@@ -203,6 +212,9 @@ Following camera parameters and filtering methods can be accessed using the dyna
 * **Integration_Time :** Modifies the integration time of the sensor.
 * **Modulation_Frequency :** Modifies the modulation frequency of the sensor.
 * **Bilateral_Filter :** Turns bilateral filtering on or off.
-* **Frame_Rate :** Sets the frame rate by changing the Phase Time
+* **Frame_Rate :** Sets the frame rate by changing the Phase Time-
+* **NOTE**  (Please be careful when setting values higher than 40 FPS without using an extra cooling system. The camera can stress by overheating and be damaged).*
+* **Flip_X :** Flip 3d data in the x coordinate.
+* **Flip_Y :** Flip 3d data in the y coordinate.
 * **Amplitude_Filter_On :** Use the amplitude filter or not
 * **Amplitude_Threshold :** Image pixels with smaller amplitude values will be filtered out. Amplitude_Filter_On status needs to be true to apply this filter value.
