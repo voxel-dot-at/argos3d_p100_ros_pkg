@@ -72,6 +72,7 @@ int integrationTime;
 int modulationFrequency;
 int frameRate;
 bool bilateralFilter;
+int flip_x, flip_y;
 
 bool AmplitudeFilterOn;
 float AmplitudeThreshold;
@@ -108,7 +109,9 @@ int help() {
 		<< "\t-it *Integration_Time* \n\tIntegration time(in msec) for the sensor \n\t(min: 100 | max: 2700 | default: 1500) "<< std::endl
 		<< "\t-mf  *Modulation_Frequency* \n\tSet the modulation frequency(Hz) of the sensor \n\t(min: 5000000 | max: 30000000 | default: 30000000) "<< std::endl
 		<< "\t-bf *Bilateral_Filter* \n\tTurns bilateral filtering on or off \n\t(ON: if set | OFF: default) "<< std::endl
-		<< "\t-fr *Frame_Rate* \n\tSet the frame rate of the camera by setting the Phase Time \n\t(min: 1 | max: 40 | default: 40)" << std::endl
+		<< "\t-fr *Frame_Rate* \n\tSet the frame rate of the camera by setting the Phase Time (Please be careful when setting values higher than 40 FPS without using an extra cooling system. The camera can stress by overheating and be damaged). \n\t(min: 1 | max: 160 | default: 40)" << std::endl
+		<< "\t-flip_x *flip_x* \n\tFlip images in the x coordinate. \n\t(ON: if set | OFF: default)" << std::endl
+		<< "\t-flip_y *flip_y* \n\tFlip images in the y coordinate. \n\t(ON: if set | OFF: default)" << std::endl
 		<< "\t-af *Amplitude_Filter_On* \n\tWhether to apply amplitude filter or not. Image pixels with amplitude values less than the threshold will be filtered out \n\t(ON: if set | OFF: default) " << std::endl
 		<< "\t-at *Amplitude_Threshold* \n\tWhat should be the amplitude filter threshold. Image pixels with lesser aplitude values will be filtered out. Amplitude Filter Status should be true to use this filter \n\t(min: 0 | max: 2500 | default: 0) "<< std::endl
 		<< "\n Example:" << std::endl
@@ -134,6 +137,11 @@ void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 		config.Frame_rate = frameRate;
 		config.Bilateral_Filter = !bilateralFilter;
 		
+		if (flip_x == -1)
+			config.Flip_X = true;
+		if (flip_y == -1)
+			config.Flip_Y = true;	
+
 		config.Amplitude_Filter_On = AmplitudeFilterOn;
 		config.Amplitude_Threshold = AmplitudeThreshold;
 		
@@ -184,6 +192,12 @@ void callback(argos3d_p100::argos3d_p100Config &config, uint32_t level)
 		}
 	}
 
+	flip_x = flip_y = 1;
+	if (config.Flip_X)
+		flip_x = -1;
+	if (config.Flip_Y)
+		flip_y = -1;
+
 	AmplitudeFilterOn = config.Amplitude_Filter_On;
 	AmplitudeThreshold = config.Amplitude_Threshold;
 }
@@ -205,6 +219,8 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	modulationFrequency = 30000000;
 	frameRate = 40;
 	bilateralFilter = false;
+	
+	flip_x = flip_y = 1;
 	
 	AmplitudeFilterOn = false;
 	AmplitudeThreshold = 0;
@@ -232,9 +248,12 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 				ROS_WARN("*invalid frame rate");
 				return help();
 			}
-		}
-		else if( std::string(argv[i]) == "-bf" ) {
+		} else if( std::string(argv[i]) == "-bf" ) {
 			bilateralFilter = true;
+		} else if( std::string(argv[i]) == "-flip_x" ) {
+			flip_x = -1;
+		} else if( std::string(argv[i]) == "-flip_y" ) {
+			flip_y = -1;
 		}
 		// additional parameters
 		else if( std::string(argv[i]) == "-af" ) {
@@ -403,8 +422,8 @@ int publishData() {
 
 	for (size_t i = 0; i < noOfRows*noOfColumns; ++i)	{
 		pcl::PointXYZI temp_point;
-		temp_point.x = cartesianDist[(i*3) + 0];
-	 	temp_point.y = cartesianDist[(i*3) + 1];
+		temp_point.x = cartesianDist[(i*3) + 0]*flip_x;
+	 	temp_point.y = cartesianDist[(i*3) + 1]*flip_y;
 	 	temp_point.z = cartesianDist[(i*3) + 2];
 	 	temp_point.intensity = amplitudes[i];
 
