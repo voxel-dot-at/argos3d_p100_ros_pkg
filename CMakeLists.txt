@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   roslib
   rospy
-  message_generation
   sensor_msgs
   std_msgs
   tf  
@@ -23,29 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 # PMD SDK Library
 add_library (pmd_sdk src/sdk/pmdsdk2.cpp)
-
-#######################################
-## Declare ROS messages and services ##
-#######################################
-
-## Generate messages in the 'msg' folder
-add_message_files(
-   FILES
-   Num.msg
-)
-
-## Generate services in the 'srv' folder
-add_service_files(
-   FILES
-   AddTwoInts.srv
-)
-
-## Generate added messages and services with any dependencies listed here
-generate_messages(
-   DEPENDENCIES
-   sensor_msgs
-   std_msgs
-)
 
 generate_dynamic_reconfigure_options(
   cfg/argos3d_p100.cfg
