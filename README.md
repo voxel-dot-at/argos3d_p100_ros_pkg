@@ -64,7 +64,7 @@ Add PMDSDK to your system (use the right version for your system 32 or 64 bits).
 
 1. Add the dynamically linked shared object library libpmdaccess2. Use one of the following options:
 
-- You have different ways to add it to the **LD_LIBRARY_PATH**.
+You have different ways to add it to the **LD_LIBRARY_PATH**.
 - You can simply copy the libpmdaccess2.so file to **/usr/local/lib** as root (or the defauld search library path of your system)
 - Add a .conf file (like pmd_camera_L64.conf) with the path of your library in **/etc/ld.so.conf.d**. The file must contaning the following lines:
 
