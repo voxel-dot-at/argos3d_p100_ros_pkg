@@ -39,22 +39,33 @@ FIND_PATH(PMD_PLUGIN_DIR NAMES digicam.L32pap
 )
 ENDIF (NOT PMD_PLUGIN_FOUND)
 
+FIND_LIBRARY(PMD_LIBRARY NAMES pmdaccess2
+  PATHS
+  $ENV{PMDDIR}/bin/
+  /usr/include/PMDSDK/bin/
+  /usr/local/include/PMDSDK/bin/
+  /opt/local/include/PMDSDK/bin/
+)
+
 include(FindPackageHandleStandardArgs)
 
-find_package_handle_standard_args(PMD_INCLUDE DEFAULT_MSG PMD_INCLUDE_DIR)
-
-find_package_handle_standard_args(PMD_PLUGIN DEFAULT_MSG PMD_PLUGIN_DIR)
-
+find_package_handle_standard_args(PMD DEFAULT_MSG PMD_INCLUDE_DIR PMD_PLUGIN_DIR PMD_LIBRARY)
 
 # show warning that no include directory was found; set it to "./" by default
-IF (NOT PMD_INCLUDE_FOUND)
- MESSAGE(STATUS "Warning: pmd include directory not found, using default folder \".\"")
+IF (NOT PMD_INCLUDE_DIR)
+ MESSAGE(STATUS "Warning: pmd include directory not found. Please ckeck your installation.")
  SET(PMD_INCLUDE_DIR .)
-ENDIF (NOT PMD_INCLUDE_FOUND)
+ENDIF (NOT PMD_INCLUDE_DIR)
 
 # show warning that no include directory was found; set it to "./" by default
-IF (NOT PMD_PLUGIN_FOUND)
- MESSAGE(STATUS "Warning: pmd plugins directory not found, using default folder \".\"")
+IF (NOT PMD_PLUGIN_DIR)
+ MESSAGE(STATUS "Warning: pmd plugins directory not found. Please ckeck your installation.")
  SET(PMD_PLUGIN_DIR .)
-ENDIF (NOT PMD_PLUGIN_FOUND)
+ENDIF (NOT PMD_PLUGIN_DIR)
+
+IF (NOT PMD_LIBRARY)
+ MESSAGE(STATUS "Warning: pmd library not found. Please ckeck your installation.")
+ SET(PMD_PLUGIN_DIR .)
+ENDIF (NOT PMD_LIBRARY)
+
 

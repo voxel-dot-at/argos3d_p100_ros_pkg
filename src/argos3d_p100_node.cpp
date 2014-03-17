@@ -282,7 +282,7 @@ int initialize(int argc, char *argv[],ros::NodeHandle nh){
 	 */
 	std::stringstream sourcePluginLocation, procPluginLocation;
 	sourcePluginLocation.clear();
-	sourcePluginLocation.clear();
+	procPluginLocation.clear();
 	sourcePluginLocation << PMD_PLUGIN_DIR << "digicam";
 	procPluginLocation << PMD_PLUGIN_DIR << "digicamproc";
 
