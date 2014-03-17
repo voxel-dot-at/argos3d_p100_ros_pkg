@@ -26,10 +26,6 @@ find_package(catkin REQUIRED COMPONENTS
   camera_calibration_parsers
 )
 
-# PMD SDK Library
-add_library (pmd_sdk src/sdk/pmdsdk2.cpp)
-
-
 generate_dynamic_reconfigure_options(
   cfg/argos3d_p100.cfg
 )
@@ -66,7 +62,7 @@ add_executable(argos3d_p100_node src/argos3d_p100_node.cpp)
 
 add_dependencies(argos3d_p100_node ${PROJECT_NAME}_gencfg) 
 
-target_link_libraries(argos3d_p100_node pmd_sdk pmdaccess2 ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(argos3d_p100_node ${PMD_LIBRARY} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 #############
 ## Install ##
