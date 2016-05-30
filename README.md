@@ -4,9 +4,9 @@ argos3d_p100_ros_pkg
 ---
 This ROS package uses an old api for the Bluetechnix Argos 3d p100 sensor.
 
-There is a new package (https://github.com/voxel-dot-at/bta_ros) that uses the new [BltToFApi](https://support.bluetechnix.at/wiki/Bluetechnix_'Time_of_Flight'_API) developed by Bluetechnix for interacting with their sensors.
+There is a new package (https://github.com/voxel-dot-at/bta_tof_driver) that uses the new [BltToFApi](https://support.bluetechnix.at/wiki/Bluetechnix_'Time_of_Flight'_API) developed by Bluetechnix for interacting with their sensors.
 
-We recommend to use the new bta_ros package.
+We recommend to use the new bta_tof_driver package.
 
 ---
 
